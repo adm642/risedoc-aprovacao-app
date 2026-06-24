@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Risedoc — App de Aprovação de Posts
 
-## Getting Started
+SaaS de aprovação de posts de redes sociais, focado 100% no fluxo de aprovação (sem integração com APIs das redes). Cliente revisa via link público; agência recebe feedback preciso (card do carrossel, momento do Reels) e reenvia após corrigir.
 
-First, run the development server:
+> Documentação de produto/arquitetura: vault Obsidian, pasta `Projetos/` (PRD, Arquitetura, Schema, Specs de UI, Roadmap).
+
+## Stack
+
+- **Next.js 16** (App Router) + TypeScript + Tailwind CSS v4
+- **Supabase** — Postgres + Auth + Storage + Realtime
+- **Resend** — e-mails transacionais
+- Deploy: **Vercel**
+
+## Rodando localmente
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. usar Node 20.9+ (projeto testado com Node 24 via nvm)
+nvm use
+
+# 2. instalar dependências
+npm install
+
+# 3. configurar ambiente
+cp .env.example .env.local   # e preencher as chaves (ver guia no vault)
+
+# 4. subir o servidor de desenvolvimento
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Banco de dados (Supabase)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+As migrations estão em `supabase/migrations/`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `0001_initial_schema.sql` — tabelas, enums, triggers
+- `0002_rls_policies.sql` — Row Level Security (escopo por agência)
 
-## Learn More
+Aplicar via SQL Editor do Supabase ou Supabase CLI.
 
-To learn more about Next.js, take a look at the following resources:
+## Estrutura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+  app/
+    (agency)/dashboard/      # painel autenticado da agência
+    (public)/aprovar/[token] # fluxo público de aprovação do cliente
+  lib/supabase/
+    server.ts                # cliente p/ Server Components (RLS por sessão)
+    client.ts                # cliente p/ navegador
+    service.ts               # service-role (server-only) p/ fluxo público
+supabase/migrations/         # SQL do banco
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Notas Next.js 16
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `cookies()`, `headers()`, `params`, `searchParams` são **assíncronos** (`await`).
+- Turbopack é o padrão (`next dev` / `next build`).
+- `middleware` foi renomeado para `proxy` — usar `proxy.ts` ao adicionar renovação de sessão.

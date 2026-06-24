@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens — Identidade Risedoc adaptada para UI de app.
+ * Ref: Projetos/Design System (App) — App de Aprovação de Posts (vault)
+ */
+@theme {
+  /* Marca */
+  --color-brand-300: #33c7b8;
+  --color-brand-400: #00b5a3;
+  --color-brand-500: #009e8e;
+  --color-brand-900: #007a6d;
+
+  --color-charcoal-700: #3a3a3e;
+  --color-charcoal-800: #2a2a2d;
+  --color-charcoal-900: #1c1c1e;
+
+  --color-neutral-50: #f5f5f0;
+  --color-neutral-100: #ebebe6;
+
+  /* Status */
+  --color-status-info: #2563eb;
+  --color-status-warning: #f59e0b;
+  --color-status-success: #16a34a;
+  --color-status-danger: #dc2626;
+
+  /* Tipografia (Axiforma p/ títulos + Sora p/ corpo — embutir no layout) */
+  --font-display: "Axiforma", var(--font-sans), system-ui, sans-serif;
+  --font-body: "Sora", var(--font-sans), system-ui, sans-serif;
+
+  /* Raios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: var(--color-neutral-50);
+  --foreground: var(--color-charcoal-900);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
 }
