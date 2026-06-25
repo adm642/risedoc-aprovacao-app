@@ -6,6 +6,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "▦" },
+  { href: "/equipe", label: "Equipe", icon: "◎" },
 ];
 
 export default function Sidebar({ email }: { email: string }) {
