@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { parseClickupTaskId } from "@/lib/clickup";
 
 const mediaSchema = z.object({
   type: z.enum(["image", "video"]),
@@ -17,6 +18,7 @@ const schema = z.object({
   format: z.enum(["feed", "reels", "story"]),
   caption: z.string().max(4000).optional(),
   suggestedAt: z.string().optional(),
+  clickupLink: z.string().max(500).optional(),
   media: z.array(mediaSchema).min(1),
 });
 
@@ -62,6 +64,7 @@ export async function createPost(
       status: "awaiting_review",
       suggested_publish_at: d.suggestedAt || null,
       created_by: member?.id ?? null,
+      clickup_task_id: parseClickupTaskId(d.clickupLink ?? ""),
     })
     .select("id")
     .single();

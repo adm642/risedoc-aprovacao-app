@@ -2,6 +2,13 @@
 
 import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { createClickupSubtask } from "@/lib/clickup";
+
+function fmtSec(sec: number) {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+}
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://risedoc-aprovacao-app.vercel.app";
 
 const tokenSchema = z.string().uuid();
 
@@ -67,7 +74,7 @@ export async function submitFeedback(
   // Garante que o post pertence a este grupo (escopo).
   const { data: post } = await ctx.sb
     .from("posts")
-    .select("id, post_targets ( id )")
+    .select("id, internal_title, clickup_task_id, post_targets ( id )")
     .eq("id", f.postId)
     .eq("group_id", ctx.groupId)
     .maybeSingle();
@@ -103,6 +110,31 @@ export async function submitFeedback(
         ? "Cliente aprovou o post"
         : "Cliente solicitou ajuste",
   });
+
+  // Integração ClickUp: subtarefa no card vinculado (best-effort, não bloqueia)
+  if (f.type === "change_request" && post.clickup_task_id) {
+    const { data: reviewer } = await ctx.sb
+      .from("reviewer_sessions")
+      .select("name")
+      .eq("id", f.reviewerId)
+      .maybeSingle();
+
+    const lines: string[] = [];
+    if (f.categories.length) lines.push(`Categorias: ${f.categories.join(", ")}`);
+    if (f.slideIndexes.length)
+      lines.push(`Cards: ${f.slideIndexes.map((i) => i + 1).join(", ")}`);
+    if (f.videoTimestamps.length)
+      lines.push(`Momentos do vídeo: ${f.videoTimestamps.map(fmtSec).join(", ")}`);
+    if (f.comment) lines.push(`\n"${f.comment}"`);
+    lines.push(`\nRevisor: ${reviewer?.name ?? "—"}`);
+    lines.push(`Ver no app: ${APP_URL}/posts/${f.postId}`);
+
+    await createClickupSubtask(
+      post.clickup_task_id,
+      `Ajuste solicitado: ${post.internal_title || "post"}`,
+      lines.join("\n"),
+    );
+  }
 
   return { ok: true };
 }

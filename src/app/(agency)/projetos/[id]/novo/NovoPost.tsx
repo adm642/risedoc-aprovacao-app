@@ -31,6 +31,7 @@ export default function NovoPost({
   const [format, setFormat] = useState<"feed" | "reels" | "story">("feed");
   const [caption, setCaption] = useState("");
   const [suggestedAt, setSuggestedAt] = useState("");
+  const [clickupLink, setClickupLink] = useState("");
   const [groupId, setGroupId] = useState<string>(groups[0]?.id ?? "__new__");
   const [newGroupName, setNewGroupName] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -76,6 +77,7 @@ export default function NovoPost({
         format,
         caption,
         suggestedAt: suggestedAt || undefined,
+        clickupLink: clickupLink || undefined,
         media,
       });
       setBusy("");
@@ -195,6 +197,19 @@ export default function NovoPost({
             />
           )}
         </div>
+      </div>
+
+      <div className="mb-5">
+        <label className={labelCls}>Card no ClickUp (opcional)</label>
+        <input
+          className={inputCls}
+          value={clickupLink}
+          onChange={(e) => setClickupLink(e.target.value)}
+          placeholder="Cole o link do card (ex.: app.clickup.com/t/abc123)"
+        />
+        <p className="mt-1 text-[11px] text-charcoal-900/50">
+          Quando o cliente pedir ajuste neste post, criamos uma subtarefa neste card.
+        </p>
       </div>
 
       {err && <p className="mb-4 text-sm text-status-danger">{err}</p>}
