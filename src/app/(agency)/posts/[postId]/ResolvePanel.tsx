@@ -99,7 +99,7 @@ export default function ResolvePanel({
         />
         <button
           onClick={saveCaption}
-          disabled={!!busy || !targetId}
+          disabled={!!busy || !targetId || caption.trim() === initialCaption.trim()}
           className="mt-2 rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-3 py-1.5 text-xs font-semibold text-brand-900 hover:border-brand-500 disabled:opacity-50"
         >
           {busy === "caption" ? "Salvando..." : "Salvar legenda"}

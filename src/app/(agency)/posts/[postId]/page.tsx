@@ -23,7 +23,7 @@ export default async function PostDetailPage({
   const { data: post } = await sb
     .from("posts")
     .select(
-      "id, internal_title, status, suggested_publish_at, project_id, projects ( name ), post_targets ( network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
+      "id, internal_title, status, suggested_publish_at, project_id, projects ( name ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
     )
     .eq("id", postId)
     .maybeSingle();
