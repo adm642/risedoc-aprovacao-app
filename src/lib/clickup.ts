@@ -29,7 +29,7 @@ export async function createClickupSubtask(
   if (!token) return { ok: false, error: "CLICKUP_API_TOKEN ausente" };
 
   try {
-    // 1) descobre a lista do card pai
+    // 1) descobre a lista do card pai + seus responsáveis
     const tRes = await fetch(`${API}/task/${encodeURIComponent(parentTaskId)}`, {
       headers: { Authorization: token },
       cache: "no-store",
@@ -39,13 +39,32 @@ export async function createClickupSubtask(
     const listId = task?.list?.id;
     if (!listId) return { ok: false, error: "card sem lista" };
 
-    // 2) cria a subtarefa
+    // responsáveis: os mesmos do card principal
+    const assignees: number[] = Array.isArray(task?.assignees)
+      ? task.assignees.map((a: { id: number }) => a.id).filter(Boolean)
+      : [];
+
+    const now = Date.now();
+    const tomorrow = now + 24 * 60 * 60 * 1000;
+
+    // 2) cria a subtarefa (responsável, início hoje, vencimento amanhã, urgente)
     const cRes = await fetch(`${API}/list/${listId}/task`, {
       method: "POST",
       headers: { Authorization: token, "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, parent: parentTaskId }),
+      body: JSON.stringify({
+        name,
+        description,
+        parent: parentTaskId,
+        assignees,
+        priority: 1, // 1 = Urgente
+        start_date: now,
+        due_date: tomorrow,
+      }),
     });
-    if (!cRes.ok) return { ok: false, error: `POST subtask ${cRes.status}` };
+    if (!cRes.ok) {
+      const body = (await cRes.text()).slice(0, 200);
+      return { ok: false, error: `POST subtask ${cRes.status}: ${body}` };
+    }
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "erro" };

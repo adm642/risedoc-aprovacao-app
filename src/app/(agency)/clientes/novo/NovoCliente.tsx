@@ -21,6 +21,7 @@ export default function NovoCliente() {
   const [networks, setNetworks] = useState<string[]>(["instagram"]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,10 +29,15 @@ export default function NovoCliente() {
     setErr("");
     setBusy(true);
     const res = await createProject({ name, networks });
-    setBusy(false);
-    if ("error" in res) return setErr(res.error);
-    router.push(`/projetos/${res.projectId}`);
-    router.refresh();
+    if ("error" in res) {
+      setBusy(false);
+      return setErr(res.error);
+    }
+    setOk(`Cliente "${name}" criado com sucesso! Redirecionando…`);
+    setTimeout(() => {
+      router.push("/dashboard");
+      router.refresh();
+    }, 1200);
   }
 
   const inputCls =
@@ -81,6 +87,7 @@ export default function NovoCliente() {
       </div>
 
       {err && <p className="mb-4 text-sm text-status-danger">{err}</p>}
+      {ok && <p className="mb-4 text-sm font-semibold text-status-success">✓ {ok}</p>}
 
       <div className="flex gap-3">
         <button

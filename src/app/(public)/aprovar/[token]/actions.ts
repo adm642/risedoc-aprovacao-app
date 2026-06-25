@@ -120,20 +120,32 @@ export async function submitFeedback(
       .maybeSingle();
 
     const lines: string[] = [];
-    if (f.categories.length) lines.push(`Categorias: ${f.categories.join(", ")}`);
+    if (f.categories.length) lines.push(`Tipo de ajuste: ${f.categories.join(", ")}`);
     if (f.slideIndexes.length)
-      lines.push(`Cards: ${f.slideIndexes.map((i) => i + 1).join(", ")}`);
+      lines.push(
+        `📍 Slide(s) do carrossel a ajustar: ${f.slideIndexes.map((i) => i + 1).join(", ")}`,
+      );
     if (f.videoTimestamps.length)
-      lines.push(`Momentos do vídeo: ${f.videoTimestamps.map(fmtSec).join(", ")}`);
-    if (f.comment) lines.push(`\n"${f.comment}"`);
+      lines.push(`📍 Momento(s) do vídeo: ${f.videoTimestamps.map(fmtSec).join(", ")}`);
+    if (f.comment) lines.push(`\nO que o cliente pediu:\n"${f.comment}"`);
     lines.push(`\nRevisor: ${reviewer?.name ?? "—"}`);
-    lines.push(`Ver no app: ${APP_URL}/posts/${f.postId}`);
+    lines.push(`🔗 Ver no app: ${APP_URL}/posts/${f.postId}`);
 
-    await createClickupSubtask(
+    const r = await createClickupSubtask(
       post.clickup_task_id,
       `Ajuste solicitado: ${post.internal_title || "post"}`,
       lines.join("\n"),
     );
+
+    // registra no histórico (sucesso ou falha) para rastreabilidade
+    await ctx.sb.from("post_events").insert({
+      post_id: f.postId,
+      actor_reviewer_id: f.reviewerId,
+      event_type: r.ok ? "clickup_subtask_created" : "clickup_subtask_failed",
+      description: r.ok
+        ? "Subtarefa criada no ClickUp"
+        : `Falha ao criar subtarefa no ClickUp: ${r.error}`,
+    });
   }
 
   return { ok: true };

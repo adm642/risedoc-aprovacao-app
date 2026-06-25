@@ -92,6 +92,16 @@ export default function NovoPost({
     }
   }
 
+  function move(i: number, dir: -1 | 1) {
+    setFiles((prev) => {
+      const a = [...prev];
+      const j = i + dir;
+      if (j < 0 || j >= a.length) return prev;
+      [a[i], a[j]] = [a[j], a[i]];
+      return a;
+    });
+  }
+
   const inputCls =
     "w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-[15px] outline-none focus:border-brand-500 focus:bg-white";
   const labelCls =
@@ -144,9 +154,50 @@ export default function NovoPost({
           className="block w-full rounded-[10px] border-2 border-dashed border-neutral-100 bg-neutral-50 px-4 py-6 text-sm text-charcoal-900/60 file:mr-4 file:rounded-md file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:font-semibold file:text-white"
         />
         {files.length > 0 && (
-          <p className="mt-2 text-xs text-charcoal-900/60">
-            {files.length} arquivo(s): {files.map((f) => f.name).join(", ")}
-          </p>
+          <>
+            {files.length > 1 && (
+              <p className="mt-2 text-xs text-charcoal-900/55">
+                Ordem do carrossel — use as setas para reorganizar:
+              </p>
+            )}
+            <div className="mt-2 flex flex-wrap gap-3">
+              {files.map((f, i) => (
+                <div key={i} className="w-24 rounded-lg border border-neutral-100 bg-white p-1.5">
+                  <div className="relative h-24 w-full overflow-hidden rounded bg-neutral-50">
+                    {f.type.startsWith("image") ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="grid h-full place-items-center text-2xl">🎬</div>
+                    )}
+                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[10px] font-bold text-white">
+                      {i + 1}
+                    </span>
+                  </div>
+                  {files.length > 1 && (
+                    <div className="mt-1 flex justify-between">
+                      <button
+                        type="button"
+                        disabled={i === 0}
+                        onClick={() => move(i, -1)}
+                        className="rounded px-2 text-sm font-bold text-brand-900 disabled:opacity-30"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        disabled={i === files.length - 1}
+                        onClick={() => move(i, 1)}
+                        className="rounded px-2 text-sm font-bold text-brand-900 disabled:opacity-30"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
