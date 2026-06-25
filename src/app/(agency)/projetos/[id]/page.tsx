@@ -22,10 +22,15 @@ function fmt(sec: number) {
 
 export default async function ProjetoPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ fpage?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const PAGE = 20;
+  const fpage = Math.max(1, parseInt(sp.fpage ?? "1", 10) || 1);
   const sb = await createSupabaseServerClient();
 
   const { data: project } = await sb
@@ -62,14 +67,17 @@ export default async function ProjetoPage({
     };
   });
 
-  const { data: feedbacks } = await sb
+  const { data: feedbacks, count: fcount } = await sb
     .from("feedbacks")
     .select(
       "id, post_id, type, categories, slide_indexes, video_timestamps, comment, resolved_at, posts!inner ( internal_title, project_id ), reviewer_sessions ( name )",
+      { count: "exact" },
     )
     .eq("posts.project_id", id)
     .order("created_at", { ascending: false })
-    .limit(12);
+    .range((fpage - 1) * PAGE, fpage * PAGE - 1);
+
+  const totalPages = Math.max(1, Math.ceil((fcount ?? 0) / PAGE));
 
   return (
     <main className="px-8 py-7">
@@ -151,8 +159,18 @@ export default async function ProjetoPage({
       )}
 
       <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
-        Feedbacks recentes
+        Grupos de aprovação
       </h2>
+      <GroupsList groups={groups} />
+
+      <div className="mb-3 mt-10 flex items-baseline gap-3">
+        <h2 className="font-display text-base font-semibold text-charcoal-900">
+          Feedbacks recentes
+        </h2>
+        {(fcount ?? 0) > 0 && (
+          <span className="text-xs text-charcoal-900/45">{fcount} no total</span>
+        )}
+      </div>
       <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white">
         {(feedbacks ?? []).length === 0 && (
           <p className="p-5 text-sm text-charcoal-900/50">
@@ -214,10 +232,33 @@ export default async function ProjetoPage({
         })}
       </div>
 
-      <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
-        Grupos de aprovação
-      </h2>
-      <GroupsList groups={groups} />
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-5">
+          {fpage > 1 ? (
+            <Link
+              href={`/projetos/${id}?fpage=${fpage - 1}`}
+              className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand-900 hover:bg-neutral-50"
+            >
+              ‹ Anterior
+            </Link>
+          ) : (
+            <span className="px-3 py-1.5 text-sm text-charcoal-900/30">‹ Anterior</span>
+          )}
+          <span className="text-sm text-charcoal-900/55">
+            Página {fpage} de {totalPages}
+          </span>
+          {fpage < totalPages ? (
+            <Link
+              href={`/projetos/${id}?fpage=${fpage + 1}`}
+              className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand-900 hover:bg-neutral-50"
+            >
+              Próxima ›
+            </Link>
+          ) : (
+            <span className="px-3 py-1.5 text-sm text-charcoal-900/30">Próxima ›</span>
+          )}
+        </div>
+      )}
     </main>
   );
 }
