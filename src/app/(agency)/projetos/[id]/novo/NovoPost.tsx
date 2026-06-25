@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { uploadResumable } from "@/lib/upload";
 import { createPost } from "./actions";
 
 type Group = { id: string; name: string };
@@ -49,19 +50,32 @@ export default function NovoPost({
 
     try {
       const sb = createSupabaseBrowserClient();
+      const {
+        data: { session },
+      } = await sb.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setBusy("");
+        return setErr("Sessão expirada. Entre novamente.");
+      }
+
       const media: { type: "image" | "video"; storageKey: string }[] = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        setBusy(`Enviando ${i + 1}/${files.length}...`);
         const key = `${projectId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
-        const { error } = await sb.storage.from("media").upload(key, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-        if (error) {
+        try {
+          await uploadResumable({
+            file,
+            key,
+            token,
+            onProgress: (pct) =>
+              setBusy(`Enviando ${i + 1}/${files.length} — ${pct}%`),
+          });
+        } catch (upErr) {
           setBusy("");
-          return setErr(`Falha no upload: ${error.message}`);
+          const msg = upErr instanceof Error ? upErr.message : "erro";
+          return setErr(`Falha no upload: ${msg}`);
         }
         media.push({
           type: file.type.startsWith("video") ? "video" : "image",
