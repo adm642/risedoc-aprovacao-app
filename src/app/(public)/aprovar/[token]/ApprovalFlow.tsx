@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
-import { identifyReviewer, submitFeedback } from "./actions";
+import { identifyReviewer, submitFeedback, submitCarouselFeedback } from "./actions";
 
 const REVIEWER_KEY = "risedoc_reviewer";
 
@@ -79,6 +79,8 @@ export default function ApprovalFlow({
   const [cats, setCats] = useState<string[]>([]);
   const [slideSel, setSlideSel] = useState<number[]>([]);
   const [comment, setComment] = useState("");
+  const [cardNotes, setCardNotes] = useState<Record<number, string>>({});
+  const [mSlide, setMSlide] = useState(0);
 
   const post: ApprovalPost | undefined = posts[cur];
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -127,7 +129,9 @@ export default function ApprovalFlow({
     if (mode === "changes") {
       setCats([]);
       setComment("");
-      setSlideSel(isCarousel ? [slide] : []);
+      setSlideSel([]);
+      setCardNotes({});
+      setMSlide(slide);
     }
     setModal(mode);
   }
@@ -159,6 +163,34 @@ export default function ApprovalFlow({
   }
 
   async function saveChanges() {
+    setErr("");
+    if (isCarousel) {
+      const items = Object.entries(cardNotes)
+        .map(([i, v]) => ({ slideIndex: Number(i), comment: (v ?? "").trim() }))
+        .filter((it) => it.comment.length > 0)
+        .sort((a, b) => a.slideIndex - b.slideIndex);
+      if (items.length === 0) {
+        setErr("Aponte o ajuste em pelo menos uma imagem.");
+        return;
+      }
+      if (!reviewerId) {
+        setErr("Sessão expirada.");
+        return;
+      }
+      setBusy(true);
+      const res = await submitCarouselFeedback({
+        token,
+        reviewerId,
+        postId: post!.id,
+        categories: cats,
+        items,
+      });
+      setBusy(false);
+      if ("error" in res) return setErr(res.error);
+      finish("changes");
+      return;
+    }
+
     setBusy(true);
     const res = await persist("change_request");
     setBusy(false);
@@ -574,65 +606,77 @@ export default function ApprovalFlow({
                 <h2>O que você quer ajustar?</h2>
                 <p className="sub">Marque o tipo e descreva. Quanto mais específico, mais rápido a gente resolve.</p>
 
-                {isCarousel && (
+                {isCarousel ? (
                   <div className="ctx">
                     <div className="ctxl">
-                      Qual imagem precisa de ajuste? <span className="badge">Carrossel</span>
+                      Ajuste por card <span className="badge">Carrossel</span>
                     </div>
-                    <div className="sslct">
-                      {Array.from({ length: slideCount }).map((_, i) => {
-                        const on = slideSel.includes(i);
-                        return (
-                          <button
-                            key={i}
-                            className="sopt"
-                            aria-pressed={on}
-                            onClick={() =>
-                              setSlideSel((prev) =>
-                                prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i],
-                              )
-                            }
-                          >
-                            <span
-                              className="mini"
-                              style={{ background: imgs.length > 0 ? "#000" : post.slides[i]?.bg ?? "#009E8E" }}
-                            >
-                              {imgs.length > 0 ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={imgs[i].url} alt="" className="miniimg" />
-                              ) : (
-                                i + 1
-                              )}
-                              <span className="tick">✓</span>
+                    <div className="mcar">
+                      {imgs.length > 0 ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={imgs[mSlide]?.url} alt="" />
+                      ) : (
+                        <div
+                          className="mcar-grad"
+                          style={{ background: post.slides[mSlide]?.bg ?? "#009E8E" }}
+                        >
+                          {post.slides[mSlide]?.h}
+                        </div>
+                      )}
+                      <button
+                        className="marrow l"
+                        onClick={() => setMSlide((mSlide - 1 + slideCount) % slideCount)}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        className="marrow r"
+                        onClick={() => setMSlide((mSlide + 1) % slideCount)}
+                      >
+                        ›
+                      </button>
+                      <span className="mcount">
+                        Imagem {mSlide + 1}/{slideCount}
+                      </span>
+                    </div>
+                    <textarea
+                      value={cardNotes[mSlide] ?? ""}
+                      onChange={(e) =>
+                        setCardNotes((p) => ({ ...p, [mSlide]: e.target.value }))
+                      }
+                      placeholder={`O que ajustar na imagem ${mSlide + 1}? (deixe vazio se estiver ok)`}
+                    />
+                    <div className="mdots">
+                      {Array.from({ length: slideCount }).map((_, i) => (
+                        <i
+                          key={i}
+                          className={`${cardNotes[i]?.trim() ? "has" : ""} ${i === mSlide ? "cur" : ""}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  isReel && (
+                    <div className="ctx">
+                      <div className="ctxl">
+                        Momentos do vídeo a ajustar <span className="badge">Reels</span>
+                      </div>
+                      {marks[cur].length ? (
+                        <div className="mchips">
+                          {marks[cur].map((sec, i) => (
+                            <span key={i} className="mchip">
+                              ⏱ {fmt(sec)}
+                              <button onClick={() => removeMark(i)}>✕</button>
                             </span>
-                            <span className="lbl">Imagem {i + 1}</span>
-                          </button>
-                        );
-                      })}
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="hinttext">
+                          Feche e <b>toque na linha do tempo do vídeo</b> para marcar o segundo exato do ajuste.
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {isReel && (
-                  <div className="ctx">
-                    <div className="ctxl">
-                      Momentos do vídeo a ajustar <span className="badge">Reels</span>
-                    </div>
-                    {marks[cur].length ? (
-                      <div className="mchips">
-                        {marks[cur].map((sec, i) => (
-                          <span key={i} className="mchip">
-                            ⏱ {fmt(sec)}
-                            <button onClick={() => removeMark(i)}>✕</button>
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="hinttext">
-                        Feche e <b>toque na linha do tempo do vídeo</b> para marcar o segundo exato do ajuste.
-                      </div>
-                    )}
-                  </div>
+                  )
                 )}
 
                 <div className="chips">
@@ -652,11 +696,13 @@ export default function ApprovalFlow({
                     );
                   })}
                 </div>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Ex.: troca 'rugas' por 'linhas de expressão'. O resto está ótimo, pode manter."
-                />
+                {!isCarousel && (
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Ex.: troca 'rugas' por 'linhas de expressão'. O resto está ótimo, pode manter."
+                  />
+                )}
                 {err && <p className="err">{err}</p>}
                 <div className="macts">
                   <button className="btn btn-ghost" onClick={() => setModal(null)}>
@@ -793,6 +839,16 @@ const CSS = `
 .ap-wrap .sopt .tick{position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:var(--accent);font-size:10px;display:none;place-items:center}
 .ap-wrap .sopt[aria-pressed=true] .tick{display:grid}
 .ap-wrap .hinttext{font-size:12px;color:var(--muted);line-height:1.5}.ap-wrap .hinttext b{color:var(--warning-ink)}
+.ap-wrap .mcar{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/5;margin-bottom:10px;display:grid;place-items:center}
+.ap-wrap .mcar img{width:100%;height:100%;object-fit:cover}
+.ap-wrap .mcar-grad{width:100%;height:100%;display:grid;place-items:center;text-align:center;padding:18px;color:#fff;font-family:var(--display);font-weight:700;font-size:16px}
+.ap-wrap .mcar .marrow{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.85);border:none;cursor:pointer;font-size:15px;color:var(--text)}
+.ap-wrap .mcar .marrow.l{left:8px}.ap-wrap .mcar .marrow.r{right:8px}
+.ap-wrap .mcar .mcount{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px}
+.ap-wrap .mdots{display:flex;gap:5px;justify-content:center;margin-top:8px}
+.ap-wrap .mdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.ap-wrap .mdots i.has{background:var(--warning)}
+.ap-wrap .mdots i.cur{outline:2px solid var(--accent);outline-offset:1px}
 .ap-wrap .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .ap-wrap .chip{font:inherit;font-size:13px;font-weight:500;padding:8px 13px;border-radius:999px;border:1.5px solid var(--line);background:#fff;cursor:pointer}
 .ap-wrap .chip[aria-pressed=true]{background:rgba(0,158,142,.10);border-color:var(--accent);color:var(--accent-p)}
