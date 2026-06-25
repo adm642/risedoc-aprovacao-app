@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
+import ResolvePanel from "./ResolvePanel";
 
 function fmt(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -197,6 +198,16 @@ export default async function PostDetailPage({
               </div>
             );
           })}
+
+          {/* resolver ajuste */}
+          {post.status === "change_requested" && (
+            <ResolvePanel
+              postId={post.id}
+              projectId={post.project_id}
+              targetId={t?.id ?? null}
+              initialCaption={t?.caption ?? ""}
+            />
+          )}
 
           {/* histórico */}
           <h2 className="mb-3 mt-6 font-display text-sm font-semibold text-charcoal-900">
