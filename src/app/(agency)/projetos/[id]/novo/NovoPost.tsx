@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { uploadResumable } from "@/lib/upload";
+import { uploadMedia } from "@/lib/upload";
 import { createPost } from "./actions";
 
 type Group = { id: string; name: string };
@@ -49,29 +48,14 @@ export default function NovoPost({
       return setErr("Dê um nome ao novo lote.");
 
     try {
-      const sb = createSupabaseBrowserClient();
-      const {
-        data: { session },
-      } = await sb.auth.getSession();
-      const token = session?.access_token;
-      if (!token) {
-        setBusy("");
-        return setErr("Sessão expirada. Entre novamente.");
-      }
-
       const media: { type: "image" | "video"; storageKey: string }[] = [];
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const key = `${projectId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
+        setBusy(`Enviando ${i + 1}/${files.length}...`);
         try {
-          await uploadResumable({
-            file,
-            key,
-            token,
-            onProgress: (pct) =>
-              setBusy(`Enviando ${i + 1}/${files.length} — ${pct}%`),
-          });
+          await uploadMedia(file, key);
         } catch (upErr) {
           setBusy("");
           const msg = upErr instanceof Error ? upErr.message : "erro";

@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { uploadResumable } from "@/lib/upload";
+import { uploadMedia } from "@/lib/upload";
 import { addCorrectedMedia, resendForApproval, updateCaption } from "./actions";
 
 function sanitize(name: string) {
@@ -46,24 +45,12 @@ export default function ResolvePanel({
     if (files.length === 0) return setErr("Escolha o arquivo corrigido.");
     setErr("");
     try {
-      const sb = createSupabaseBrowserClient();
-      const {
-        data: { session },
-      } = await sb.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return setErr("Sessão expirada.");
-
       const media: { storageKey: string; type: "image" | "video" }[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const key = `${projectId}/${crypto.randomUUID()}-${sanitize(file.name)}`;
         setBusy(`Enviando ${i + 1}/${files.length}...`);
-        await uploadResumable({
-          file,
-          key,
-          token,
-          onProgress: (p) => setBusy(`Enviando ${i + 1}/${files.length} — ${p}%`),
-        });
+        await uploadMedia(file, key);
         media.push({
           storageKey: key,
           type: file.type.startsWith("video") ? "video" : "image",
