@@ -109,6 +109,26 @@ export async function addCorrectedMedia(
   return { ok: true };
 }
 
+export async function toggleFeedbackResolved(input: {
+  feedbackId: string;
+  postId: string;
+  resolved: boolean;
+}): Promise<{ ok: true } | { error: string }> {
+  if (!z.string().uuid().safeParse(input.feedbackId).success)
+    return { error: "Feedback inválido." };
+  const c = await ctx();
+  if (!c) return { error: "Sessão expirada." };
+
+  const { error } = await c.sb
+    .from("feedbacks")
+    .update({ resolved_at: input.resolved ? new Date().toISOString() : null })
+    .eq("id", input.feedbackId);
+  if (error) return { error: "Não foi possível atualizar." };
+
+  revalidatePath(`/posts/${input.postId}`);
+  return { ok: true };
+}
+
 export async function resendForApproval(input: {
   postId: string;
 }): Promise<{ ok: true } | { error: string }> {

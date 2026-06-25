@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
 import ResolvePanel from "./ResolvePanel";
+import FeedbackResolveToggle from "./FeedbackResolveToggle";
 
 function fmt(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -32,7 +33,7 @@ export default async function PostDetailPage({
   const { data: feedbacks } = await sb
     .from("feedbacks")
     .select(
-      "id, type, categories, slide_indexes, video_timestamps, comment, created_at, reviewer_sessions ( name, email )",
+      "id, type, categories, slide_indexes, video_timestamps, comment, created_at, resolved_at, reviewer_sessions ( name, email )",
     )
     .eq("post_id", postId)
     .order("created_at", { ascending: false });
@@ -130,7 +131,7 @@ export default async function PostDetailPage({
             return (
               <div
                 key={f.id}
-                className="mb-3 rounded-[10px] border p-3.5"
+                className={`mb-3 rounded-[10px] border p-3.5 ${f.resolved_at ? "opacity-60" : ""}`}
                 style={{
                   borderColor: isChange ? "rgba(245,158,11,.4)" : "rgba(22,163,74,.4)",
                   background: isChange ? "rgba(245,158,11,.07)" : "rgba(22,163,74,.06)",
@@ -194,6 +195,15 @@ export default async function PostDetailPage({
                   <p className="mt-2.5 rounded-lg border border-neutral-100 bg-white p-2.5 text-[13px] leading-relaxed">
                     “{f.comment}”
                   </p>
+                )}
+                {isChange && (
+                  <div className="mt-3 flex justify-end">
+                    <FeedbackResolveToggle
+                      feedbackId={f.id}
+                      postId={post.id}
+                      initialResolved={!!f.resolved_at}
+                    />
+                  </div>
                 )}
               </div>
             );
