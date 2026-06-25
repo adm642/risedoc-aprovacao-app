@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
 import { identifyReviewer, submitFeedback } from "./actions";
+
+const REVIEWER_KEY = "risedoc_reviewer";
 
 const CATEGORIES = [
   "Texto / legenda",
@@ -28,14 +30,45 @@ export default function ApprovalFlow({
   data: ApprovalData;
 }) {
   const posts = data.posts;
-  const [step, setStep] = useState<"welcome" | "identify" | "review" | "done">(
-    "welcome",
-  );
+  const [step, setStep] = useState<
+    "loading" | "welcome" | "welcomeback" | "identify" | "review" | "done"
+  >("loading");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [saved, setSaved] = useState<{ name: string; email: string } | null>(null);
   const [reviewerId, setReviewerId] = useState<string | null>(null);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Reconhece o revisor neste dispositivo (lembrado de uma visita anterior).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(REVIEWER_KEY);
+      if (raw) {
+        const r = JSON.parse(raw);
+        if (r?.name && r?.email) {
+          setSaved({ name: r.name, email: r.email });
+          setName(r.name);
+          setEmail(r.email);
+          setStep("welcomeback");
+          return;
+        }
+      }
+    } catch {
+      // localStorage indisponível (modo privado) — segue o fluxo normal
+    }
+    setStep("welcome");
+  }, []);
+
+  function rememberReviewer(n: string, e: string) {
+    try {
+      localStorage.setItem(REVIEWER_KEY, JSON.stringify({ name: n, email: e }));
+    } catch {
+      // ignore
+    }
+  }
+
+  const firstName = (saved?.name ?? name).trim().split(/\s+/)[0] || "você";
 
   const [cur, setCur] = useState(0);
   const [slide, setSlide] = useState(0);
@@ -61,8 +94,32 @@ export default function ApprovalFlow({
     const res = await identifyReviewer({ token, name, email });
     setBusy(false);
     if ("error" in res) return setErr(res.error);
+    rememberReviewer(name, email);
     setReviewerId(res.reviewerId);
     setStep("review");
+  }
+
+  async function continueAsSaved() {
+    if (!saved) return;
+    setErr("");
+    setBusy(true);
+    const res = await identifyReviewer({ token, name: saved.name, email: saved.email });
+    setBusy(false);
+    if ("error" in res) return setErr(res.error);
+    setReviewerId(res.reviewerId);
+    setStep("review");
+  }
+
+  function notMe() {
+    try {
+      localStorage.removeItem(REVIEWER_KEY);
+    } catch {
+      // ignore
+    }
+    setSaved(null);
+    setName("");
+    setEmail("");
+    setStep("identify");
   }
 
   function openModal(mode: "changes" | "approve") {
@@ -193,6 +250,48 @@ export default function ApprovalFlow({
               : data.groupName}
           </span>
         </div>
+
+        {/* LOADING */}
+        {step === "loading" && (
+          <section className="center">
+            <span className="eq lg">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </section>
+        )}
+
+        {/* WELCOME BACK — reconhecido neste dispositivo */}
+        {step === "welcomeback" && saved && (
+          <section className="center">
+            <span className="eq lg">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+            <span className="eyebrow" style={{ marginTop: 18 }}>
+              Que bom te ver de novo
+            </span>
+            <h1 className="title">{firstName}, é você?</h1>
+            <p className="lede">
+              Você tem {posts.length} post(s) para revisar. Confirma que é você
+              pra continuar.
+            </p>
+            {err && <p className="err">{err}</p>}
+            <button
+              className="btn btn-primary btn-lg"
+              style={{ width: "100%", marginTop: 26 }}
+              disabled={busy}
+              onClick={continueAsSaved}
+            >
+              {busy ? "..." : `Sim, sou ${firstName} →`}
+            </button>
+            <button className="secbtn" onClick={notMe}>
+              Não sou {firstName} / sou outra pessoa
+            </button>
+          </section>
+        )}
 
         {/* WELCOME */}
         {step === "welcome" && (
@@ -620,6 +719,8 @@ const CSS = `
 .ap-wrap .field input{width:100%;font:inherit;font-size:15px;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--ground)}
 .ap-wrap .field input:focus{outline:none;border-color:var(--accent);background:#fff}
 .ap-wrap .err{color:#DC2626;font-size:13px;margin-top:12px}
+.ap-wrap .secbtn{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;margin-top:14px;text-decoration:underline}
+.ap-wrap .secbtn:hover{color:var(--text)}
 .ap-wrap .progress{display:flex;gap:9px;padding:14px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}.ap-wrap .progress::-webkit-scrollbar{display:none}
 .ap-wrap .thumb{flex:0 0 auto;width:44px;height:44px;border-radius:6px;border:2px solid var(--line);cursor:pointer;position:relative;display:grid;place-items:center;font-size:13px;font-weight:700}
 .ap-wrap .thumb.current{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,158,142,.25)}
