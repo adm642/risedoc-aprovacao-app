@@ -16,6 +16,10 @@ function one(v: any) {
   return Array.isArray(v) ? v[0] : v;
 }
 
+function fmt(sec: number) {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+}
+
 export default async function ProjetoPage({
   params,
 }: {
@@ -57,6 +61,15 @@ export default async function ProjetoPage({
       total: gp.length,
     };
   });
+
+  const { data: feedbacks } = await sb
+    .from("feedbacks")
+    .select(
+      "id, post_id, type, categories, slide_indexes, video_timestamps, comment, resolved_at, posts!inner ( internal_title, project_id ), reviewer_sessions ( name )",
+    )
+    .eq("posts.project_id", id)
+    .order("created_at", { ascending: false })
+    .limit(12);
 
   return (
     <main className="px-8 py-7">
@@ -136,6 +149,70 @@ export default async function ProjetoPage({
       {(posts ?? []).length === 0 && (
         <p className="text-sm text-charcoal-900/50">Nenhum post neste projeto ainda.</p>
       )}
+
+      <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
+        Feedbacks recentes
+      </h2>
+      <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white">
+        {(feedbacks ?? []).length === 0 && (
+          <p className="p-5 text-sm text-charcoal-900/50">
+            Nenhum feedback ainda. Quando o cliente revisar, aparece aqui.
+          </p>
+        )}
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {((feedbacks ?? []) as any[]).map((f) => {
+          const reviewer = one(f.reviewer_sessions);
+          const post = one(f.posts);
+          const isChange = f.type === "change_request";
+          return (
+            <Link
+              key={f.id}
+              href={`/posts/${f.post_id}`}
+              className={`flex flex-col gap-1.5 border-b border-neutral-100 px-5 py-3.5 last:border-0 hover:bg-neutral-50 ${f.resolved_at ? "opacity-60" : ""}`}
+            >
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    isChange
+                      ? "bg-status-warning/15 text-[#b4730a]"
+                      : "bg-status-success/15 text-status-success"
+                  }`}
+                >
+                  {isChange ? "✏ Pedido de ajuste" : "✓ Aprovado"}
+                </span>
+                <span className="font-semibold text-charcoal-900">
+                  {post?.internal_title ?? "Post"}
+                </span>
+                {f.resolved_at && (
+                  <span className="text-xs font-semibold text-status-success">· resolvido ✓</span>
+                )}
+                <span className="ml-auto text-xs text-charcoal-900/45">{reviewer?.name}</span>
+              </div>
+              {(f.slide_indexes?.length > 0 || f.video_timestamps?.length > 0) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {f.slide_indexes?.map((i: number) => (
+                    <span
+                      key={`s${i}`}
+                      className="rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-brand-900"
+                    >
+                      ▦ Card {i + 1}
+                    </span>
+                  ))}
+                  {f.video_timestamps?.map((sx: number) => (
+                    <span
+                      key={`t${sx}`}
+                      className="rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-[#b4730a]"
+                    >
+                      ⏱ {fmt(sx)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {f.comment && <p className="text-sm text-charcoal-900/70">“{f.comment}”</p>}
+            </Link>
+          );
+        })}
+      </div>
 
       <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
         Grupos de aprovação
