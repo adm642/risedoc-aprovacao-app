@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
 import ResolvePanel from "./ResolvePanel";
 import FeedbackResolveToggle from "./FeedbackResolveToggle";
+import MediaCarousel from "./MediaCarousel";
 
 function fmt(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -24,7 +25,7 @@ export default async function PostDetailPage({
   const { data: post } = await sb
     .from("posts")
     .select(
-      "id, internal_title, status, suggested_publish_at, project_id, projects ( name ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
+      "id, internal_title, status, suggested_publish_at, clickup_task_id, project_id, projects ( name ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
     )
     .eq("id", postId)
     .maybeSingle();
@@ -54,6 +55,14 @@ export default async function PostDetailPage({
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const first = media[0];
   const isReel = t?.format === "reels" || first?.type === "video";
+  const mediaArr = media.map((m) => ({
+    type: (m.type === "video" ? "video" : "image") as "image" | "video",
+    url: publicMediaUrl(m.storage_key),
+  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lastClickup = ((events ?? []) as any[])
+    .filter((e) => String(e.event_type).startsWith("clickup_"))
+    .pop();
 
   return (
     <main className="px-8 py-7">
@@ -68,38 +77,21 @@ export default async function PostDetailPage({
         {/* preview */}
         <div>
           <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white shadow-sm">
-            <div
-              className="relative flex flex-col justify-end overflow-hidden p-5 text-white"
-              style={{ aspectRatio: isReel ? "9/16" : "4/5", background: first ? "#000" : slide.bg }}
-            >
-              {first && first.type === "image" && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={publicMediaUrl(first.storage_key)} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              )}
-              {first && first.type === "video" && (
-                <video src={publicMediaUrl(first.storage_key)} controls playsInline className="absolute inset-0 h-full w-full object-contain" />
-              )}
-              {isReel && first?.type !== "video" && (
-                <span className="absolute right-3 top-3 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
-                  ▶ Reels
-                </span>
-              )}
-              {!first && (
-                <>
-                  <div className="mb-auto text-[10px] uppercase tracking-wider opacity-90">
-                    {demo.kicker}
-                  </div>
-                  <h3 className="font-display text-xl drop-shadow">{slide.h}</h3>
-                  {slide.p && <p className="mt-1 text-xs opacity-90">{slide.p}</p>}
-                </>
-              )}
-              {media.length > 1 && (
-                <span className="absolute bottom-3 right-3 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
-                  +{media.length - 1} imagem(ns)
-                </span>
-              )}
-            </div>
-            <div className="p-3 text-[13px] leading-relaxed">
+            {first ? (
+              <MediaCarousel media={mediaArr} isReel={isReel} />
+            ) : (
+              <div
+                className="relative flex flex-col justify-end overflow-hidden p-5 text-white"
+                style={{ aspectRatio: isReel ? "9/16" : "4/5", background: slide.bg }}
+              >
+                <div className="mb-auto text-[10px] uppercase tracking-wider opacity-90">
+                  {demo.kicker}
+                </div>
+                <h3 className="font-display text-xl drop-shadow">{slide.h}</h3>
+                {slide.p && <p className="mt-1 text-xs opacity-90">{slide.p}</p>}
+              </div>
+            )}
+            <div className="whitespace-pre-line p-3 text-[13px] leading-relaxed">
               <b>@cliente</b> {t?.caption}
             </div>
           </div>
@@ -113,6 +105,22 @@ export default async function PostDetailPage({
           <h1 className="font-display text-xl font-bold text-charcoal-900">
             {post.internal_title}
           </h1>
+
+          {post.clickup_task_id && (
+            <div className="mt-2 text-xs">
+              {lastClickup?.event_type === "clickup_subtask_created" ? (
+                <span className="font-semibold text-status-success">
+                  ✓ Subtarefa criada no ClickUp
+                </span>
+              ) : lastClickup?.event_type === "clickup_subtask_failed" ? (
+                <span className="font-semibold text-[#b4730a]">
+                  ⚠ ClickUp não criou a subtarefa — {lastClickup.description}
+                </span>
+              ) : (
+                <span className="text-charcoal-900/55">🔗 Vinculado a um card do ClickUp</span>
+              )}
+            </div>
+          )}
 
           <h2 className="mb-3 mt-6 font-display text-sm font-semibold text-charcoal-900">
             Feedback do cliente

@@ -756,7 +756,7 @@ const CSS = `
 .ap-wrap .pin::after{content:attr(data-t);position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:var(--warning-ink);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap}
 .ap-wrap .dur{font-size:11px;margin-top:4px;text-align:right;opacity:.85}
 .ap-wrap .igactions{display:flex;gap:16px;padding:10px 13px 4px;font-size:18px}.ap-wrap .igactions .right{margin-left:auto}
-.ap-wrap .cap{padding:4px 13px 14px;font-size:13px;line-height:1.55}.ap-wrap .cap b{font-weight:600}
+.ap-wrap .cap{padding:4px 13px 14px;font-size:13px;line-height:1.55;white-space:pre-line}.ap-wrap .cap b{font-weight:600}
 .ap-wrap .info{margin:14px 18px 0;display:grid;gap:9px}.ap-wrap .line{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted)}.ap-wrap .line b{color:var(--text);font-weight:600}.ap-wrap .ic{color:var(--accent)}
 .ap-wrap .marks{margin:12px 18px 0;padding:11px 13px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);border-radius:10px}
 .ap-wrap .mt{font-size:12px;font-weight:600;color:var(--warning-ink)}
