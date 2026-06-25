@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
 import { identifyReviewer, submitFeedback } from "./actions";
 
@@ -48,8 +48,12 @@ export default function ApprovalFlow({
   const [comment, setComment] = useState("");
 
   const post: ApprovalPost | undefined = posts[cur];
-  const isReel = post?.format === "reels";
-  const isCarousel = (post?.slides.length ?? 0) > 1;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const imgs = (post?.media ?? []).filter((m) => m.type === "image");
+  const video = (post?.media ?? []).find((m) => m.type === "video");
+  const isReel = post?.format === "reels" || !!video;
+  const slideCount = imgs.length > 0 ? imgs.length : post?.slides.length ?? 1;
+  const isCarousel = slideCount > 1;
 
   async function continueIdentify() {
     setErr("");
@@ -143,9 +147,7 @@ export default function ApprovalFlow({
     setStep("done");
   }
 
-  function addMark(ratio: number) {
-    if (!post?.duration) return;
-    const sec = Math.round(ratio * post.duration);
+  function addMarkSeconds(sec: number) {
     setMarks((m) => {
       const copy = m.map((x) => [...x]);
       if (!copy[cur].includes(sec)) {
@@ -154,6 +156,10 @@ export default function ApprovalFlow({
       }
       return copy;
     });
+  }
+  function addMarkRatio(ratio: number) {
+    if (!post?.duration) return;
+    addMarkSeconds(Math.round(ratio * post.duration));
   }
 
   function removeMark(idx: number) {
@@ -290,30 +296,39 @@ export default function ApprovalFlow({
                   </span>
                   <span className="more">⋯</span>
                 </div>
-                <div className={`media ${isReel ? "reel" : ""}`} style={{ background: s?.bg }}>
-                  {isReel && <span className="reelbadge">▶ Reels</span>}
-                  <div className="kicker">{post.kicker}</div>
-                  <h3>{s?.h}</h3>
-                  {s?.p && <p>{s.p}</p>}
+                <div className={`media ${isReel ? "reel" : ""}`} style={{ background: video || imgs.length > 0 ? "#000" : s?.bg }}>
+                  {video ? (
+                    <video ref={videoRef} src={video.url} controls playsInline className="vid" />
+                  ) : imgs.length > 0 ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imgs[Math.min(slide, imgs.length - 1)].url} alt="" className="img" />
+                  ) : (
+                    <>
+                      {isReel && <span className="reelbadge">▶ Reels</span>}
+                      <div className="kicker">{post.kicker}</div>
+                      <h3>{s?.h}</h3>
+                      {s?.p && <p>{s.p}</p>}
+                    </>
+                  )}
                   {isCarousel && (
                     <>
-                      <button className="arrow left" onClick={() => setSlide((slide - 1 + post.slides.length) % post.slides.length)}>‹</button>
-                      <button className="arrow right" onClick={() => setSlide((slide + 1) % post.slides.length)}>›</button>
+                      <button className="arrow left" onClick={() => setSlide((slide - 1 + slideCount) % slideCount)}>‹</button>
+                      <button className="arrow right" onClick={() => setSlide((slide + 1) % slideCount)}>›</button>
                       <div className="dots">
-                        {post.slides.map((_, i) => (
+                        {Array.from({ length: slideCount }).map((_, i) => (
                           <i key={i} className={i === slide ? "on" : ""}></i>
                         ))}
                       </div>
                     </>
                   )}
-                  {isReel && post.duration && (
+                  {isReel && !video && post.duration && (
                     <div className="scrub">
                       <div className="hint">⏱ Toque na linha do tempo para marcar onde ajustar</div>
                       <div
                         className="track"
                         onClick={(e) => {
                           const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-                          addMark(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
+                          addMarkRatio(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)));
                         }}
                       >
                         <div className="bar"></div>
@@ -334,6 +349,21 @@ export default function ApprovalFlow({
                     </div>
                   )}
                 </div>
+                {video && (
+                  <div className="vidmark">
+                    <button
+                      onClick={() => {
+                        const v = videoRef.current;
+                        if (v) addMarkSeconds(Math.round(v.currentTime));
+                      }}
+                    >
+                      ⏱ Marcar este momento para ajuste
+                    </button>
+                    <span className="vidhint">
+                      Dê play, pause no ponto exato e toque para marcar
+                    </span>
+                  </div>
+                )}
                 <div className="igactions">
                   <span>♡</span>
                   <span>💬</span>
@@ -451,7 +481,7 @@ export default function ApprovalFlow({
                       Qual imagem precisa de ajuste? <span className="badge">Carrossel</span>
                     </div>
                     <div className="sslct">
-                      {post.slides.map((sl, i) => {
+                      {Array.from({ length: slideCount }).map((_, i) => {
                         const on = slideSel.includes(i);
                         return (
                           <button
@@ -464,8 +494,16 @@ export default function ApprovalFlow({
                               )
                             }
                           >
-                            <span className="mini" style={{ background: sl.bg }}>
-                              {i + 1}
+                            <span
+                              className="mini"
+                              style={{ background: imgs.length > 0 ? "#000" : post.slides[i]?.bg ?? "#009E8E" }}
+                            >
+                              {imgs.length > 0 ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={imgs[i].url} alt="" className="miniimg" />
+                              ) : (
+                                i + 1
+                              )}
                               <span className="tick">✓</span>
                             </span>
                             <span className="lbl">Imagem {i + 1}</span>
@@ -597,6 +635,12 @@ const CSS = `
 .ap-wrap .more{margin-left:auto;color:var(--muted)}
 .ap-wrap .media{position:relative;aspect-ratio:4/5;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;color:#fff;overflow:hidden}
 .ap-wrap .media.reel{aspect-ratio:9/16}
+.ap-wrap .media .img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ap-wrap .media .vid{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.ap-wrap .vidmark{margin:10px 18px 0;display:flex;flex-direction:column;gap:5px}
+.ap-wrap .vidmark button{background:rgba(245,158,11,.12);border:1.5px solid var(--warning);color:var(--warning-ink);font:inherit;font-size:14px;font-weight:600;padding:12px;border-radius:10px;cursor:pointer}
+.ap-wrap .vidhint{font-size:11px;color:var(--muted);text-align:center}
+.ap-wrap .miniimg{width:100%;height:100%;object-fit:cover}
 .ap-wrap .media .kicker{font-size:11px;text-transform:uppercase;letter-spacing:.12em;opacity:.9;margin-bottom:auto}
 .ap-wrap .media h3{font-size:24px;line-height:1.1;margin:0;text-shadow:0 2px 14px rgba(0,0,0,.35)}
 .ap-wrap .media p{font-size:13px;margin:8px 0 0;opacity:.92;text-shadow:0 1px 8px rgba(0,0,0,.4)}

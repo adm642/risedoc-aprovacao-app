@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { publicMediaUrl } from "@/lib/media";
 
 function fmt(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -21,7 +22,7 @@ export default async function PostDetailPage({
   const { data: post } = await sb
     .from("posts")
     .select(
-      "id, internal_title, status, suggested_publish_at, project_id, projects ( name ), post_targets ( network, format, caption, settings )",
+      "id, internal_title, status, suggested_publish_at, project_id, projects ( name ), post_targets ( network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
     )
     .eq("id", postId)
     .maybeSingle();
@@ -45,7 +46,12 @@ export default async function PostDetailPage({
   const demo = t?.settings?.demo ?? {};
   const slide = demo.slides?.[0] ?? { h: post.internal_title, bg: "#009E8E" };
   const project = one(post.projects);
-  const isReel = t?.format === "reels";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const media = ((post.post_media ?? []) as any[])
+    .filter((m) => m.is_current)
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const first = media[0];
+  const isReel = t?.format === "reels" || first?.type === "video";
 
   return (
     <main className="px-8 py-7">
@@ -61,19 +67,35 @@ export default async function PostDetailPage({
         <div>
           <div className="overflow-hidden rounded-xl border border-neutral-100 bg-white shadow-sm">
             <div
-              className="relative flex flex-col justify-end p-5 text-white"
-              style={{ aspectRatio: isReel ? "9/16" : "4/5", background: slide.bg }}
+              className="relative flex flex-col justify-end overflow-hidden p-5 text-white"
+              style={{ aspectRatio: isReel ? "9/16" : "4/5", background: first ? "#000" : slide.bg }}
             >
-              {isReel && (
-                <span className="absolute right-3 top-3 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
+              {first && first.type === "image" && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={publicMediaUrl(first.storage_key)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              )}
+              {first && first.type === "video" && (
+                <video src={publicMediaUrl(first.storage_key)} controls playsInline className="absolute inset-0 h-full w-full object-contain" />
+              )}
+              {isReel && first?.type !== "video" && (
+                <span className="absolute right-3 top-3 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
                   ▶ Reels
                 </span>
               )}
-              <div className="mb-auto text-[10px] uppercase tracking-wider opacity-90">
-                {demo.kicker}
-              </div>
-              <h3 className="font-display text-xl drop-shadow">{slide.h}</h3>
-              {slide.p && <p className="mt-1 text-xs opacity-90">{slide.p}</p>}
+              {!first && (
+                <>
+                  <div className="mb-auto text-[10px] uppercase tracking-wider opacity-90">
+                    {demo.kicker}
+                  </div>
+                  <h3 className="font-display text-xl drop-shadow">{slide.h}</h3>
+                  {slide.p && <p className="mt-1 text-xs opacity-90">{slide.p}</p>}
+                </>
+              )}
+              {media.length > 1 && (
+                <span className="absolute bottom-3 right-3 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
+                  +{media.length - 1} imagem(ns)
+                </span>
+              )}
             </div>
             <div className="p-3 text-[13px] leading-relaxed">
               <b>@cliente</b> {t?.caption}

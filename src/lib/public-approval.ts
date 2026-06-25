@@ -1,7 +1,9 @@
 import "server-only";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { publicMediaUrl } from "@/lib/media";
 
 export type Slide = { h: string; p?: string; bg: string };
+export type Media = { type: "image" | "video"; url: string };
 
 export type ApprovalPost = {
   id: string;
@@ -13,6 +15,7 @@ export type ApprovalPost = {
   kicker: string;
   duration: number | null;
   slides: Slide[];
+  media: Media[];
 };
 
 export type ApprovalData = {
@@ -47,7 +50,7 @@ export async function getApprovalData(
   const { data: posts } = await sb
     .from("posts")
     .select(
-      "id, status, suggested_publish_at, post_targets ( network, format, caption, settings )",
+      "id, status, suggested_publish_at, post_targets ( network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
     )
     .eq("group_id", group.id)
     .is("deleted_at", null)
@@ -72,6 +75,14 @@ export async function getApprovalData(
         ? p.post_targets[0]
         : p.post_targets;
       const demo = t?.settings?.demo ?? {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const media: Media[] = ((p.post_media ?? []) as any[])
+        .filter((m) => m.is_current)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((m) => ({
+          type: m.type === "video" ? "video" : "image",
+          url: publicMediaUrl(m.storage_key),
+        }));
       return {
         id: p.id,
         status: p.status,
@@ -82,6 +93,7 @@ export async function getApprovalData(
         kicker: demo.kicker ?? "",
         duration: demo.duration ?? null,
         slides: demo.slides ?? [{ h: "", bg: "#009E8E" }],
+        media,
       } satisfies ApprovalPost;
     }),
   };
