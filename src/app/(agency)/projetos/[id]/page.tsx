@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
+import GroupsList, { type GroupItem } from "./GroupsList";
 
 const STATUS: Record<string, { label: string; border: string; badge: string; ink: string }> = {
   draft: { label: "Rascunho", border: "#E6E6DF", badge: "rgba(28,28,30,.06)", ink: "#1C1C1E" },
@@ -36,6 +37,26 @@ export default async function ProjetoPage({
     .eq("project_id", id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
+
+  const { data: groupsRaw } = await sb
+    .from("approval_groups")
+    .select("id, name, public_token, posts ( status )")
+    .eq("project_id", id)
+    .order("created_at", { ascending: false });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const groups: GroupItem[] = ((groupsRaw ?? []) as any[]).map((g) => {
+    const gp = (g.posts ?? []) as { status: string }[];
+    return {
+      id: g.id,
+      name: g.name,
+      token: g.public_token,
+      awaiting: gp.filter((x) => x.status === "awaiting_review").length,
+      changes: gp.filter((x) => x.status === "change_requested").length,
+      approved: gp.filter((x) => x.status === "approved").length,
+      total: gp.length,
+    };
+  });
 
   return (
     <main className="px-8 py-7">
@@ -115,6 +136,11 @@ export default async function ProjetoPage({
       {(posts ?? []).length === 0 && (
         <p className="text-sm text-charcoal-900/50">Nenhum post neste projeto ainda.</p>
       )}
+
+      <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
+        Grupos de aprovação
+      </h2>
+      <GroupsList groups={groups} />
     </main>
   );
 }
