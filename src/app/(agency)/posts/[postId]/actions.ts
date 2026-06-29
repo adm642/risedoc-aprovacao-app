@@ -170,6 +170,25 @@ export async function toggleFeedbackResolved(input: {
     .eq("id", input.feedbackId);
   if (error) return { error: "Não foi possível atualizar." };
 
+  // registra no histórico (somente ao resolver)
+  if (input.resolved) {
+    const { data: fb } = await c.sb
+      .from("feedbacks")
+      .select("slide_indexes, comment")
+      .eq("id", input.feedbackId)
+      .maybeSingle();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const slides = ((fb as any)?.slide_indexes ?? []) as number[];
+    const where =
+      slides.length > 0 ? ` (Card ${slides.map((i) => i + 1).join(", ")})` : "";
+    await c.sb.from("post_events").insert({
+      post_id: input.postId,
+      actor_member_id: c.memberId,
+      event_type: "feedback_resolved",
+      description: `Ajuste marcado como resolvido${where}`,
+    });
+  }
+
   revalidatePath(`/posts/${input.postId}`);
   return { ok: true };
 }

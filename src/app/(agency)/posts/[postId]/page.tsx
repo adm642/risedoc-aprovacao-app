@@ -68,6 +68,12 @@ export default async function PostDetailPage({
     .filter((e) => String(e.event_type).startsWith("clickup_"))
     .pop();
 
+  // resolvidos somem da lista (ficam só no histórico)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const allFeedbacks = (feedbacks ?? []) as any[];
+  const visibleFeedbacks = allFeedbacks.filter((f) => !f.resolved_at);
+  const resolvedCount = allFeedbacks.length - visibleFeedbacks.length;
+
   return (
     <main className="px-8 py-7">
       <Link
@@ -138,15 +144,22 @@ export default async function PostDetailPage({
           <h2 className="mb-3 mt-6 font-display text-sm font-semibold text-charcoal-900">
             Feedback do cliente
           </h2>
-          {(feedbacks ?? []).length === 0 && (
+          {visibleFeedbacks.length === 0 && (
             <p className="rounded-[10px] border border-dashed border-neutral-100 p-5 text-center text-sm text-charcoal-900/50">
-              {post.status === "approved"
-                ? "✓ Aprovado, sem ajustes."
-                : "Ainda aguardando o cliente revisar."}
+              {resolvedCount > 0
+                ? "✓ Todos os ajustes foram resolvidos. Veja o histórico abaixo."
+                : post.status === "approved"
+                  ? "✓ Aprovado, sem ajustes."
+                  : "Ainda aguardando o cliente revisar."}
+            </p>
+          )}
+          {resolvedCount > 0 && visibleFeedbacks.length > 0 && (
+            <p className="mb-3 text-[11px] text-charcoal-900/45">
+              {resolvedCount} ajuste(s) já resolvido(s) — no histórico abaixo.
             </p>
           )}
           {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          {((feedbacks ?? []) as any[]).map((f) => {
+          {(visibleFeedbacks as any[]).map((f) => {
             const reviewer = one(f.reviewer_sessions);
             const isChange = f.type === "change_request";
             return (
