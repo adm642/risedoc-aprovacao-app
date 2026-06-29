@@ -5,6 +5,7 @@ import { publicMediaUrl } from "@/lib/media";
 import ResolvePanel from "./ResolvePanel";
 import FeedbackResolveToggle from "./FeedbackResolveToggle";
 import MediaCarousel from "./MediaCarousel";
+import EditPostPanel from "./EditPostPanel";
 
 function fmt(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
@@ -16,10 +17,13 @@ function one(v: any) {
 
 export default async function PostDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ postId: string }>;
+  searchParams: Promise<{ edit?: string }>;
 }) {
   const { postId } = await params;
+  const { edit } = await searchParams;
   const sb = await createSupabaseServerClient();
 
   const { data: post } = await sb
@@ -121,6 +125,15 @@ export default async function PostDetailPage({
               )}
             </div>
           )}
+
+          <EditPostPanel
+            postId={post.id}
+            targetId={t?.id ?? null}
+            initialTitle={post.internal_title}
+            initialCaption={t?.caption ?? ""}
+            initialSuggestedAt={post.suggested_publish_at ?? null}
+            defaultOpen={edit === "1"}
+          />
 
           <h2 className="mb-3 mt-6 font-display text-sm font-semibold text-charcoal-900">
             Feedback do cliente

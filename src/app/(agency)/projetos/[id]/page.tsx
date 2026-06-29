@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
 import GroupsList, { type GroupItem } from "./GroupsList";
 import ClientSettings from "./ClientSettings";
+import PostCardMenu from "./PostCardMenu";
 
 const STATUS: Record<string, { label: string; border: string; badge: string; ink: string }> = {
   draft: { label: "Rascunho", border: "#E6E6DF", badge: "rgba(28,28,30,.06)", ink: "#1C1C1E" },
@@ -138,10 +139,11 @@ export default async function ProjetoPage({
             .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
           const first = media[0];
           return (
+            <div key={p.id} className="relative">
+              <PostCardMenu postId={p.id} projectId={id} title={p.internal_title} />
             <Link
-              key={p.id}
               href={`/posts/${p.id}`}
-              className="overflow-hidden rounded-[10px] border border-neutral-100 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="block overflow-hidden rounded-[10px] border border-neutral-100 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md"
               style={{ borderLeft: `4px solid ${st.border}` }}
             >
               <div
@@ -176,6 +178,7 @@ export default async function ProjetoPage({
                 </span>
               </div>
             </Link>
+            </div>
           );
         })}
       </div>

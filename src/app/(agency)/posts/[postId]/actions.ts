@@ -49,6 +49,51 @@ export async function updateCaption(
   return { ok: true };
 }
 
+const updatePostSchema = z.object({
+  postId: z.string().uuid(),
+  targetId: z.string().uuid().nullable(),
+  title: z.string().min(1).max(160),
+  caption: z.string().max(4000),
+  suggestedAt: z.string().optional(),
+});
+
+export async function updatePost(
+  input: z.input<typeof updatePostSchema>,
+): Promise<{ ok: true } | { error: string }> {
+  const parsed = updatePostSchema.safeParse(input);
+  if (!parsed.success) return { error: "Preencha o título do post." };
+  const d = parsed.data;
+  const c = await ctx();
+  if (!c) return { error: "Sessão expirada." };
+
+  const { error: pe } = await c.sb
+    .from("posts")
+    .update({
+      internal_title: d.title,
+      suggested_publish_at: d.suggestedAt || null,
+    })
+    .eq("id", d.postId);
+  if (pe) return { error: "Não foi possível salvar o post." };
+
+  if (d.targetId) {
+    const { error: te } = await c.sb
+      .from("post_targets")
+      .update({ caption: d.caption })
+      .eq("id", d.targetId);
+    if (te) return { error: "Não foi possível salvar a legenda." };
+  }
+
+  await c.sb.from("post_events").insert({
+    post_id: d.postId,
+    actor_member_id: c.memberId,
+    event_type: "post_edited",
+    description: "Post editado na plataforma",
+  });
+
+  revalidatePath(`/posts/${d.postId}`);
+  return { ok: true };
+}
+
 const correctedSchema = z.object({
   postId: z.string().uuid(),
   media: z

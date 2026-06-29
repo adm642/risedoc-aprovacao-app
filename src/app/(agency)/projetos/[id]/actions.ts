@@ -41,3 +41,30 @@ export async function updateProjectSettings(
   revalidatePath(`/projetos/${d.projectId}`);
   return { ok: true };
 }
+
+export async function deletePost(input: {
+  postId: string;
+  projectId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  if (
+    !z.string().uuid().safeParse(input.postId).success ||
+    !z.string().uuid().safeParse(input.projectId).success
+  )
+    return { error: "Post inválido." };
+
+  const sb = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  // soft-delete (RLS garante que o post é da agência do usuário)
+  const { error } = await sb
+    .from("posts")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", input.postId);
+  if (error) return { error: "Não foi possível excluir o post." };
+
+  revalidatePath(`/projetos/${input.projectId}`);
+  return { ok: true };
+}
