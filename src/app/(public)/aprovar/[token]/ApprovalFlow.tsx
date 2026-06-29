@@ -339,13 +339,29 @@ export default function ApprovalFlow({
         {/* WELCOME */}
         {step === "welcome" && (
           <section className="center">
-            <span className="eq lg">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
+            {data.clientPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={data.clientPhoto}
+                alt={data.clientName}
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  margin: "0 auto 4px",
+                  display: "block",
+                }}
+              />
+            ) : (
+              <span className="eq lg">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            )}
             <span className="eyebrow" style={{ marginTop: 18 }}>
-              Olá!
+              {data.clientName ? data.clientName : "Olá!"}
             </span>
             <h1 className="title">
               Você recebeu {posts.length} posts para revisar

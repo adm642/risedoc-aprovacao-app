@@ -13,7 +13,7 @@ export default async function NovoPostPage({
 
   const { data: project } = await sb
     .from("projects")
-    .select("id, name")
+    .select("id, name, clickup_folder_id")
     .eq("id", id)
     .maybeSingle();
   if (!project) notFound();
@@ -37,7 +37,13 @@ export default async function NovoPostPage({
       </h1>
       <p className="mb-6 text-sm text-charcoal-900/60">{project.name}</p>
 
-      <NovoPost projectId={id} projectName={project.name} groups={groups ?? []} />
+      <NovoPost
+        projectId={id}
+        projectName={project.name}
+        groups={groups ?? []}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        hasClickupFolder={!!(project as any).clickup_folder_id}
+      />
     </main>
   );
 }

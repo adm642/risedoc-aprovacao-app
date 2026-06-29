@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadMedia } from "@/lib/upload";
-import { createPost } from "./actions";
+import { createPost, getClickupCards } from "./actions";
+import type { ClickupCard } from "@/lib/clickup";
 
 type Group = { id: string; name: string };
 
@@ -21,10 +22,12 @@ export default function NovoPost({
   projectId,
   projectName,
   groups,
+  hasClickupFolder = false,
 }: {
   projectId: string;
   projectName: string;
   groups: Group[];
+  hasClickupFolder?: boolean;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -37,6 +40,35 @@ export default function NovoPost({
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+
+  // Seletor de card do ClickUp (quando o cliente tem pasta vinculada)
+  const [cards, setCards] = useState<ClickupCard[] | null>(null);
+  const [loadingCards, setLoadingCards] = useState(hasClickupFolder);
+  const [pasteMode, setPasteMode] = useState(false);
+
+  useEffect(() => {
+    if (!hasClickupFolder) return;
+    let alive = true;
+    (async () => {
+      const res = await getClickupCards(projectId);
+      if (!alive) return;
+      setCards("cards" in res ? res.cards : []);
+      setLoadingCards(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [hasClickupFolder, projectId]);
+
+  // agrupa cards por lista para o <optgroup>
+  const cardsByList = (cards ?? []).reduce<Record<string, ClickupCard[]>>(
+    (acc, c) => {
+      const k = c.listName || "Cards";
+      (acc[k] ??= []).push(c);
+      return acc;
+    },
+    {},
+  );
 
   const fmt = FORMATS.find((f) => f.v === format)!;
 
@@ -252,15 +284,75 @@ export default function NovoPost({
 
       <div className="mb-5">
         <label className={labelCls}>Card no ClickUp (opcional)</label>
-        <input
-          className={inputCls}
-          value={clickupLink}
-          onChange={(e) => setClickupLink(e.target.value)}
-          placeholder="Cole o link do card (ex.: app.clickup.com/t/abc123)"
-        />
-        <p className="mt-1 text-[11px] text-charcoal-900/50">
-          Quando o cliente pedir ajuste neste post, criamos uma subtarefa neste card.
-        </p>
+
+        {hasClickupFolder && !pasteMode ? (
+          <>
+            {loadingCards ? (
+              <div className={`${inputCls} text-charcoal-900/50`}>
+                Carregando cards do ClickUp…
+              </div>
+            ) : (cards ?? []).length > 0 ? (
+              <select
+                className={inputCls}
+                value={clickupLink}
+                onChange={(e) => setClickupLink(e.target.value)}
+              >
+                <option value="">— Escolha o card deste post —</option>
+                {Object.entries(cardsByList).map(([listName, list]) => (
+                  <optgroup key={listName} label={listName}>
+                    {list.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                        {c.status ? ` · ${c.status}` : ""}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            ) : (
+              <div className={`${inputCls} text-charcoal-900/50`}>
+                Nenhum card encontrado na pasta vinculada.
+              </div>
+            )}
+            <p className="mt-1 text-[11px] text-charcoal-900/50">
+              Cards puxados da pasta do cliente no ClickUp.{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setPasteMode(true);
+                  setClickupLink("");
+                }}
+                className="font-semibold text-brand-900 hover:underline"
+              >
+                Colar o link manualmente
+              </button>
+            </p>
+          </>
+        ) : (
+          <>
+            <input
+              className={inputCls}
+              value={clickupLink}
+              onChange={(e) => setClickupLink(e.target.value)}
+              placeholder="Cole o link do card (ex.: app.clickup.com/t/abc123)"
+            />
+            <p className="mt-1 text-[11px] text-charcoal-900/50">
+              Quando o cliente pedir ajuste neste post, criamos uma subtarefa neste card.
+              {hasClickupFolder && (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={() => setPasteMode(false)}
+                    className="font-semibold text-brand-900 hover:underline"
+                  >
+                    Escolher da lista
+                  </button>
+                </>
+              )}
+            </p>
+          </>
+        )}
       </div>
 
       {err && <p className="mb-4 text-sm text-status-danger">{err}</p>}

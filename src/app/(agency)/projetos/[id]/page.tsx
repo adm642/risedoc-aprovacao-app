@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
 import GroupsList, { type GroupItem } from "./GroupsList";
+import ClientSettings from "./ClientSettings";
 
 const STATUS: Record<string, { label: string; border: string; badge: string; ink: string }> = {
   draft: { label: "Rascunho", border: "#E6E6DF", badge: "rgba(28,28,30,.06)", ink: "#1C1C1E" },
@@ -35,7 +36,7 @@ export default async function ProjetoPage({
 
   const { data: project } = await sb
     .from("projects")
-    .select("id, name")
+    .select("id, name, photo_url, clickup_folder_id")
     .eq("id", id)
     .maybeSingle();
   if (!project) notFound();
@@ -85,18 +86,42 @@ export default async function ProjetoPage({
         ‹ Voltar para Dashboard
       </Link>
       <div className="mt-3 mb-6 flex items-center gap-4">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {(project as any).photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            src={(project as any).photo_url}
+            alt=""
+            className="h-14 w-14 shrink-0 rounded-2xl object-cover"
+          />
+        ) : (
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-900 font-display text-2xl font-bold text-white">
+            {project.name.charAt(0)}
+          </span>
+        )}
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-charcoal-900">
             {project.name}
           </h1>
           <p className="text-sm text-charcoal-900/60">Meus posts</p>
         </div>
-        <Link
-          href={`/projetos/${id}/novo`}
-          className="ml-auto rounded-[10px] bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
-        >
-          + Novo post
-        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <ClientSettings
+            projectId={project.id}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            photoUrl={(project as any).photo_url ?? null}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            clickupFolder={(project as any).clickup_folder_id ?? null}
+            name={project.name}
+          />
+          <Link
+            href={`/projetos/${id}/novo`}
+            className="rounded-[10px] bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
+          >
+            + Novo post
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">

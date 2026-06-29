@@ -22,6 +22,8 @@ export type ApprovalData = {
   groupId: string;
   groupName: string;
   agencyName: string;
+  clientName: string;
+  clientPhoto: string | null;
   posts: ApprovalPost[];
 };
 
@@ -41,7 +43,7 @@ export async function getApprovalData(
 
   const { data: group } = await sb
     .from("approval_groups")
-    .select("id, name, projects ( name, agencies ( name ) )")
+    .select("id, name, projects ( name, photo_url, agencies ( name ) )")
     .eq("public_token", token)
     .maybeSingle();
 
@@ -69,6 +71,8 @@ export async function getApprovalData(
     groupId: group.id,
     groupName: group.name,
     agencyName: agency?.name ?? "Agência",
+    clientName: project?.name ?? "",
+    clientPhoto: project?.photo_url ?? null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     posts: (posts ?? []).map((p: any) => {
       const t = Array.isArray(p.post_targets)

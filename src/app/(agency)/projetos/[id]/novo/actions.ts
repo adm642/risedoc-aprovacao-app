@@ -3,7 +3,11 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseClickupTaskId } from "@/lib/clickup";
+import {
+  parseClickupTaskId,
+  listClickupCards,
+  type ClickupCard,
+} from "@/lib/clickup";
 
 const mediaSchema = z.object({
   type: z.enum(["image", "video"]),
@@ -21,6 +25,28 @@ const schema = z.object({
   clickupLink: z.string().max(500).optional(),
   media: z.array(mediaSchema).min(1),
 });
+
+/** Lista os cards do ClickUp vinculados ao cliente (para o seletor de card). */
+export async function getClickupCards(
+  projectId: string,
+): Promise<{ cards: ClickupCard[] } | { error: string }> {
+  const sb = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  const { data: project } = await sb
+    .from("projects")
+    .select("clickup_folder_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ref = (project as any)?.clickup_folder_id as string | null;
+  if (!ref) return { cards: [] };
+
+  return { cards: await listClickupCards(ref) };
+}
 
 export async function createPost(
   input: z.input<typeof schema>,

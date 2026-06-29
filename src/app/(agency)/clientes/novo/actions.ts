@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { parseClickupContainer } from "@/lib/clickup";
 
 const NETWORKS = [
   "instagram",
@@ -17,10 +18,17 @@ const NETWORKS = [
 const schema = z.object({
   name: z.string().min(1).max(160),
   networks: z.array(z.enum(NETWORKS)).default([]),
+  photoUrl: z.string().url().max(600).optional(),
+  clickupFolder: z.string().max(500).optional(),
 });
 
 export async function createProject(
-  input: { name: string; networks: string[] },
+  input: {
+    name: string;
+    networks: string[];
+    photoUrl?: string;
+    clickupFolder?: string;
+  },
 ): Promise<{ ok: true; projectId: string } | { error: string }> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { error: "Informe o nome do cliente." };
@@ -40,7 +48,14 @@ export async function createProject(
 
   const { data: project, error } = await sb
     .from("projects")
-    .insert({ agency_id: member.agency_id, name: parsed.data.name })
+    .insert({
+      agency_id: member.agency_id,
+      name: parsed.data.name,
+      photo_url: parsed.data.photoUrl ?? null,
+      clickup_folder_id: parsed.data.clickupFolder
+        ? parseClickupContainer(parsed.data.clickupFolder)
+        : null,
+    })
     .select("id")
     .single();
   if (error) return { error: "Não foi possível criar o cliente." };

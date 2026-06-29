@@ -28,7 +28,7 @@ export default async function DashboardPage() {
 
   const { data: projects } = await sb
     .from("projects")
-    .select("id, name, project_networks ( network ), posts ( status, post_targets ( network ) )")
+    .select("id, name, photo_url, project_networks ( network ), posts ( status, post_targets ( network ) )")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -105,9 +105,18 @@ export default async function DashboardPage() {
               className="rounded-2xl border border-neutral-100 bg-white p-[18px] transition-all hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-[14px] bg-gradient-to-br from-brand-500 to-brand-900 font-display text-lg font-bold text-white">
-                  {p.name.charAt(0)}
-                </span>
+                {p.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.photo_url}
+                    alt=""
+                    className="h-11 w-11 shrink-0 rounded-[14px] object-cover"
+                  />
+                ) : (
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] bg-gradient-to-br from-brand-500 to-brand-900 font-display text-lg font-bold text-white">
+                    {p.name.charAt(0)}
+                  </span>
+                )}
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-charcoal-900">{p.name}</div>
                   <div className="mt-0.5 flex flex-wrap gap-1">

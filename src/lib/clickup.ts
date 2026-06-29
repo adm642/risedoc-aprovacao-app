@@ -17,6 +17,85 @@ export function parseClickupTaskId(input: string): string | null {
 }
 
 /**
+ * Interpreta um link/ID de container do ClickUp (pasta ou lista).
+ * Retorna a referência normalizada "folder:<id>" / "list:<id>", ou null.
+ * Ex: .../v/o/f/90112233/.. -> "folder:90112233"
+ *     .../v/li/901100445566 -> "list:901100445566"
+ */
+export function parseClickupContainer(input: string): string | null {
+  const s = (input ?? "").trim();
+  if (!s) return null;
+  let m = s.match(/\/f\/(\d+)/);
+  if (m) return `folder:${m[1]}`;
+  m = s.match(/\/(?:li|l)\/(\d+)/);
+  if (m) return `list:${m[1]}`;
+  // valores crus
+  if (/^folder:\d+$/.test(s) || /^list:\d+$/.test(s)) return s;
+  if (/^\d+$/.test(s)) return `folder:${s}`; // assume pasta
+  return null;
+}
+
+export type ClickupCard = {
+  id: string;
+  name: string;
+  listName: string;
+  status: string | null;
+};
+
+/**
+ * Lista os cards (tasks) de um container do ClickUp para o seletor de card.
+ * Aceita ref "folder:<id>" (varre as listas da pasta) ou "list:<id>".
+ * Best-effort: retorna [] em qualquer falha.
+ */
+export async function listClickupCards(ref: string): Promise<ClickupCard[]> {
+  const token = process.env.CLICKUP_API_TOKEN;
+  if (!token) return [];
+  const headers = { Authorization: token };
+
+  try {
+    const [kind, id] = ref.split(":");
+    let listIds: { id: string; name: string }[] = [];
+
+    if (kind === "folder") {
+      const r = await fetch(
+        `${API}/folder/${encodeURIComponent(id)}/list?archived=false`,
+        { headers, cache: "no-store" },
+      );
+      if (!r.ok) return [];
+      const j = await r.json();
+      listIds = (j?.lists ?? [])
+        .map((l: { id: string; name: string }) => ({ id: l.id, name: l.name }))
+        .slice(0, 8);
+    } else if (kind === "list") {
+      listIds = [{ id, name: "" }];
+    } else {
+      return [];
+    }
+
+    const cards: ClickupCard[] = [];
+    for (const list of listIds) {
+      const tr = await fetch(
+        `${API}/list/${encodeURIComponent(list.id)}/task?archived=false&include_closed=false&subtasks=false&page=0`,
+        { headers, cache: "no-store" },
+      );
+      if (!tr.ok) continue;
+      const tj = await tr.json();
+      for (const t of tj?.tasks ?? []) {
+        cards.push({
+          id: t.id,
+          name: t.name ?? "(sem título)",
+          listName: list.name || t?.list?.name || "",
+          status: t?.status?.status ?? null,
+        });
+      }
+    }
+    return cards;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Cria uma subtarefa no card informado, com o conteúdo do ajuste.
  * Best-effort: nunca lança — retorna {ok:false} em falha (não bloqueia o feedback).
  */
