@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { uploadMedia } from "@/lib/upload";
 import { publicMediaUrl } from "@/lib/media";
-import { updateProjectSettings } from "./actions";
+import { updateProjectSettings, deleteProject } from "./actions";
 
 function sanitize(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -28,6 +28,7 @@ export default function ClientSettings({
   const [folder, setFolder] = useState(clickupFolder ?? "");
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   function pick(file: File | null) {
     setPhoto(file);
@@ -58,6 +59,18 @@ export default function ClientSettings({
     setBusy("");
     if ("error" in res) return setErr(res.error);
     setOpen(false);
+    router.refresh();
+  }
+
+  async function doDelete() {
+    setErr("");
+    setBusy("Excluindo...");
+    const res = await deleteProject({ projectId });
+    if ("error" in res) {
+      setBusy("");
+      return setErr(res.error);
+    }
+    router.push("/dashboard");
     router.refresh();
   }
 
@@ -142,6 +155,48 @@ export default function ClientSettings({
               >
                 {busy || "Salvar"}
               </button>
+            </div>
+
+            {/* Zona de perigo — excluir cliente */}
+            <div className="mt-5 border-t border-neutral-100 pt-4">
+              {!confirmDelete ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErr("");
+                    setConfirmDelete(true);
+                  }}
+                  className="text-sm font-semibold text-status-danger hover:underline"
+                >
+                  Excluir cliente
+                </button>
+              ) : (
+                <div className="rounded-[10px] border border-status-danger/30 bg-status-danger/5 p-3">
+                  <p className="text-xs text-charcoal-900/75">
+                    Excluir <b>{name}</b>? Ele some do painel. Posts, lotes e
+                    histórico ficam guardados (recuperável), e os links de
+                    aprovação deixam de funcionar.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={doDelete}
+                      disabled={!!busy}
+                      className="rounded-md bg-status-danger px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                    >
+                      {busy || "Excluir cliente"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDelete(false)}
+                      disabled={!!busy}
+                      className="rounded-md border border-neutral-100 px-3 py-1.5 text-xs font-semibold text-charcoal-900"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

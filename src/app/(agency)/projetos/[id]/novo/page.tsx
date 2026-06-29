@@ -22,6 +22,7 @@ export default async function NovoPostPage({
     .from("approval_groups")
     .select("id, name")
     .eq("project_id", id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   return (

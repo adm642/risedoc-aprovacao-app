@@ -53,6 +53,7 @@ export default async function ProjetoPage({
     .from("approval_groups")
     .select("id, name, public_token, posts ( status )")
     .eq("project_id", id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,7 +190,7 @@ export default async function ProjetoPage({
       <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
         Grupos de aprovação
       </h2>
-      <GroupsList groups={groups} />
+      <GroupsList groups={groups} projectId={id} />
 
       <div className="mb-3 mt-10 flex items-baseline gap-3">
         <h2 className="font-display text-base font-semibold text-charcoal-900">

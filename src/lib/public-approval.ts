@@ -43,11 +43,13 @@ export async function getApprovalData(
 
   const { data: group } = await sb
     .from("approval_groups")
-    .select("id, name, projects ( name, photo_url, agencies ( name ) )")
+    .select("id, name, deleted_at, projects ( name, photo_url, agencies ( name ) )")
     .eq("public_token", token)
     .maybeSingle();
 
   if (!group) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((group as any).deleted_at) return null;
 
   const { data: posts } = await sb
     .from("posts")

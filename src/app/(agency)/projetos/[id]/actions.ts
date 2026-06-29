@@ -42,6 +42,116 @@ export async function updateProjectSettings(
   return { ok: true };
 }
 
+const groupNameSchema = z.object({
+  projectId: z.string().uuid(),
+  name: z.string().min(1).max(80),
+});
+
+export async function createGroup(
+  input: z.input<typeof groupNameSchema>,
+): Promise<{ ok: true; groupId: string } | { error: string }> {
+  const parsed = groupNameSchema.safeParse(input);
+  if (!parsed.success) return { error: "Dê um nome ao lote." };
+
+  const sb = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  const { data, error } = await sb
+    .from("approval_groups")
+    .insert({
+      project_id: parsed.data.projectId,
+      name: parsed.data.name,
+      status: "draft",
+    })
+    .select("id")
+    .single();
+  if (error) return { error: "Não foi possível criar o lote." };
+
+  revalidatePath(`/projetos/${parsed.data.projectId}`);
+  return { ok: true, groupId: data.id };
+}
+
+const renameSchema = z.object({
+  groupId: z.string().uuid(),
+  projectId: z.string().uuid(),
+  name: z.string().min(1).max(80),
+});
+
+export async function renameGroup(
+  input: z.input<typeof renameSchema>,
+): Promise<{ ok: true } | { error: string }> {
+  const parsed = renameSchema.safeParse(input);
+  if (!parsed.success) return { error: "Nome inválido." };
+
+  const sb = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  const { error } = await sb
+    .from("approval_groups")
+    .update({ name: parsed.data.name })
+    .eq("id", parsed.data.groupId);
+  if (error) return { error: "Não foi possível renomear o lote." };
+
+  revalidatePath(`/projetos/${parsed.data.projectId}`);
+  return { ok: true };
+}
+
+export async function deleteGroup(input: {
+  groupId: string;
+  projectId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  if (
+    !z.string().uuid().safeParse(input.groupId).success ||
+    !z.string().uuid().safeParse(input.projectId).success
+  )
+    return { error: "Lote inválido." };
+
+  const sb = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  // soft-delete: preserva posts (group_id intacto) e histórico de feedback
+  const { error } = await sb
+    .from("approval_groups")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", input.groupId);
+  if (error) return { error: "Não foi possível excluir o lote." };
+
+  revalidatePath(`/projetos/${input.projectId}`);
+  return { ok: true };
+}
+
+export async function deleteProject(input: {
+  projectId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  if (!z.string().uuid().safeParse(input.projectId).success)
+    return { error: "Cliente inválido." };
+
+  const sb = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return { error: "Sessão expirada." };
+
+  // soft-delete do cliente (some do dashboard; posts/lotes/histórico ficam no banco)
+  const { error } = await sb
+    .from("projects")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", input.projectId);
+  if (error) return { error: "Não foi possível excluir o cliente." };
+
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 export async function deletePost(input: {
   postId: string;
   projectId: string;
