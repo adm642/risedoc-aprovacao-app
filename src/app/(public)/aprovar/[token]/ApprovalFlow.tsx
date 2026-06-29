@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
-import { identifyReviewer, submitFeedback, submitCarouselFeedback } from "./actions";
+import {
+  identifyReviewer,
+  submitFeedback,
+  submitCarouselFeedback,
+  finalizeReview,
+} from "./actions";
 
 const REVIEWER_KEY = "risedoc_reviewer";
 
@@ -198,6 +203,10 @@ export default function ApprovalFlow({
     finish("changes");
   }
 
+  function notifyDone() {
+    if (reviewerId) finalizeReview({ token, reviewerId }).catch(() => {});
+  }
+
   function finish(status: Status) {
     const updated = [...resp];
     updated[cur] = status;
@@ -206,6 +215,7 @@ export default function ApprovalFlow({
     const next = nextPending(updated);
     if (next === -1) {
       setStep("done");
+      notifyDone();
     } else {
       setTimeout(() => {
         setCur(next);
@@ -234,6 +244,7 @@ export default function ApprovalFlow({
     setResp(updated);
     setBusy(false);
     setStep("done");
+    notifyDone();
   }
 
   function addMarkSeconds(sec: number) {

@@ -3,12 +3,13 @@
 import { z } from "zod";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { createClickupSubtask } from "@/lib/clickup";
+import { sendReviewSummaryEmail } from "@/lib/email";
 
 function fmtSec(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 }
 const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL || "https://risedoc-aprovacao-app.vercel.app";
+  process.env.NEXT_PUBLIC_APP_URL || "https://app.risedoc.com.br";
 
 const tokenSchema = z.string().uuid();
 
@@ -21,6 +22,95 @@ async function resolveGroup(token: string) {
     .eq("public_token", token)
     .maybeSingle();
   return data ? { sb, groupId: data.id } : null;
+}
+
+/**
+ * Chamado quando o cliente termina de revisar o lote inteiro.
+ * Dispara UM e-mail resumo para a agência (best-effort, idempotente).
+ */
+export async function finalizeReview(input: {
+  token: string;
+  reviewerId: string;
+}): Promise<{ ok: true } | { error: string }> {
+  if (!tokenSchema.safeParse(input.token).success)
+    return { error: "Link inválido." };
+  const sb = createSupabaseServiceClient();
+
+  const { data: group } = await sb
+    .from("approval_groups")
+    .select(
+      "id, name, last_notified_at, projects ( id, name, agency_id, agencies ( name ) )",
+    )
+    .eq("public_token", input.token)
+    .maybeSingle();
+  if (!group) return { error: "Link inválido." };
+
+  // Idempotência: evita reenvio se já notificou nos últimos 60s (refresh/duplo clique).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lastAt = (group as any).last_notified_at as string | null;
+  if (lastAt && Date.now() - new Date(lastAt).getTime() < 60_000) {
+    return { ok: true };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const project: any = Array.isArray((group as any).projects)
+    ? (group as any).projects[0]
+    : (group as any).projects;
+  const clientName: string = project?.name ?? "Cliente";
+  const agencyId: string | undefined = project?.agency_id;
+
+  // Contagem de status do lote
+  const { data: posts } = await sb
+    .from("posts")
+    .select("status")
+    .eq("group_id", group.id)
+    .is("deleted_at", null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const all = (posts ?? []) as any[];
+  const approved = all.filter((p) => p.status === "approved").length;
+  const changes = all.filter((p) => p.status === "change_requested").length;
+
+  // Nome do revisor
+  const { data: reviewer } = await sb
+    .from("reviewer_sessions")
+    .select("name")
+    .eq("id", input.reviewerId)
+    .maybeSingle();
+
+  // E-mails dos membros da agência
+  const to: string[] = [];
+  if (agencyId) {
+    const { data: members } = await sb
+      .from("agency_members")
+      .select("user_id")
+      .eq("agency_id", agencyId);
+    const ids = new Set((members ?? []).map((m) => m.user_id));
+    if (ids.size > 0) {
+      const { data: list } = await sb.auth.admin.listUsers();
+      for (const u of list?.users ?? []) {
+        if (ids.has(u.id) && u.email) to.push(u.email);
+      }
+    }
+  }
+
+  const r = await sendReviewSummaryEmail({
+    to,
+    reviewerName: reviewer?.name ?? "O cliente",
+    clientName,
+    groupName: group.name,
+    approved,
+    changes,
+    total: all.length,
+    link: `${APP_URL}/projetos/${project?.id ?? ""}`,
+  });
+
+  // marca a notificação (ignora erro de coluna ausente)
+  await sb
+    .from("approval_groups")
+    .update({ last_notified_at: new Date().toISOString() })
+    .eq("id", group.id);
+
+  return r.ok ? { ok: true } : { error: r.error ?? "Falha no e-mail" };
 }
 
 const reviewerSchema = z.object({
