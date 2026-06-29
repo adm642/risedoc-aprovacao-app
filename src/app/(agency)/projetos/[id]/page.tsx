@@ -118,6 +118,12 @@ export default async function ProjetoPage({
             name={project.name}
           />
           <Link
+            href={`/projetos/${id}/calendario`}
+            className="rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition-colors hover:border-brand-500/40"
+          >
+            📅 Calendário
+          </Link>
+          <Link
             href={`/projetos/${id}/novo`}
             className="rounded-[10px] bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
           >

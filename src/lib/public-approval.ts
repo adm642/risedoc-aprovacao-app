@@ -30,6 +30,82 @@ export type ApprovalData = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export type CalendarItem = {
+  id: string;
+  title: string;
+  date: string;
+  status: string;
+  thumb: string | null;
+};
+
+export type ClientCalendar = {
+  clientName: string;
+  clientPhoto: string | null;
+  agencyName: string;
+  items: CalendarItem[];
+};
+
+/**
+ * Calendário público do cliente, a partir do token do lote.
+ * Mostra TODOS os posts do projeto (cliente) com data sugerida.
+ */
+export async function getClientCalendar(
+  token: string,
+): Promise<ClientCalendar | null> {
+  if (!UUID_RE.test(token)) return null;
+  const sb = createSupabaseServiceClient();
+
+  const { data: group } = await sb
+    .from("approval_groups")
+    .select("id, deleted_at, project_id, projects ( name, photo_url, agencies ( name ) )")
+    .eq("public_token", token)
+    .maybeSingle();
+  if (!group) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((group as any).deleted_at) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const project: any = Array.isArray((group as any).projects)
+    ? (group as any).projects[0]
+    : (group as any).projects;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const agency: any = Array.isArray(project?.agencies)
+    ? project.agencies[0]
+    : project?.agencies;
+
+  const { data: posts } = await sb
+    .from("posts")
+    .select(
+      "id, internal_title, status, suggested_publish_at, post_media ( type, storage_key, position, is_current )",
+    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .eq("project_id", (group as any).project_id)
+    .is("deleted_at", null)
+    .not("suggested_publish_at", "is", null)
+    .order("suggested_publish_at", { ascending: true });
+
+  return {
+    clientName: project?.name ?? "",
+    clientPhoto: project?.photo_url ?? null,
+    agencyName: agency?.name ?? "Agência",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    items: ((posts ?? []) as any[]).map((p) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const first = ((p.post_media ?? []) as any[])
+        .filter((m) => m.is_current)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0];
+      return {
+        id: p.id,
+        title: p.internal_title,
+        date: p.suggested_publish_at,
+        status: p.status,
+        thumb:
+          first && first.type === "image" ? publicMediaUrl(first.storage_key) : null,
+      };
+    }),
+  };
+}
+
 /**
  * Carrega o lote de aprovação a partir do token público.
  * Escopo é garantido pelo token → group_id. Service-role roda só no servidor.

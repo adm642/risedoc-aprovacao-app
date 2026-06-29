@@ -380,6 +380,13 @@ export default function ApprovalFlow({
             >
               Vamos lá →
             </button>
+            <a
+              href={`/aprovar/${token}/calendario`}
+              className="secbtn"
+              style={{ display: "inline-block", marginTop: 4, textDecoration: "none" }}
+            >
+              📅 Ver calendário de publicações
+            </a>
           </section>
         )}
 
@@ -611,6 +618,13 @@ export default function ApprovalFlow({
                 <small>Ajustes</small>
               </div>
             </div>
+            <a
+              href={`/aprovar/${token}/calendario`}
+              className="secbtn"
+              style={{ display: "inline-block", marginTop: 18, textDecoration: "none" }}
+            >
+              📅 Ver calendário de publicações
+            </a>
           </section>
         )}
       </div>
