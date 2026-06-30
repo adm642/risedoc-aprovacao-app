@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { Logo } from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,20 +28,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-50 p-6">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-neutral-50 p-6">
+      {/* grafismo de marca — octógonos sangrando no canto */}
+      <img
+        src="/brand/graf-octagons.png"
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute -bottom-16 -right-16 w-72 opacity-[0.07] select-none"
+        draggable={false}
+      />
       <form
         onSubmit={submit}
-        className="w-full max-w-sm rounded-2xl border border-neutral-100 bg-white p-8 shadow-sm"
+        className="relative w-full max-w-sm rounded-2xl border border-neutral-100 bg-white p-8 shadow-sm"
       >
-        <div className="mb-7 flex flex-col items-center gap-1">
-          <div className="flex flex-col gap-[3px]">
-            <span className="h-[3px] w-[18px] rounded bg-brand-500" />
-            <span className="h-[3px] w-[18px] rounded bg-brand-500" />
-            <span className="h-[3px] w-[18px] rounded bg-brand-500" />
-          </div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-charcoal-900">
-            rise<span className="text-brand-500">doc</span>
-          </h1>
+        <div className="mb-7 flex flex-col items-center gap-2">
+          <Logo variant="color" height={40} />
           <p className="text-sm text-charcoal-900/60">Painel da agência</p>
         </div>
 

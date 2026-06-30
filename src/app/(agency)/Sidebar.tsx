@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { Logo } from "@/components/Logo";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "▦" },
@@ -22,15 +23,8 @@ export default function Sidebar({ email }: { email: string }) {
 
   return (
     <aside className="flex w-[232px] flex-col gap-1 border-r border-neutral-100 bg-white p-4">
-      <Link href="/dashboard" className="flex items-center gap-2 px-2 pb-5 pt-1">
-        <span className="flex flex-col gap-[3px]">
-          <span className="h-[3px] w-[15px] rounded bg-brand-500" />
-          <span className="h-[3px] w-[15px] rounded bg-brand-500" />
-          <span className="h-[3px] w-[15px] rounded bg-brand-500" />
-        </span>
-        <span className="font-display text-lg font-bold tracking-tight text-charcoal-900">
-          rise<span className="text-brand-500">doc</span>
-        </span>
+      <Link href="/dashboard" className="flex items-center px-2 pb-5 pt-2">
+        <Logo variant="flat" height={26} />
       </Link>
 
       {NAV.map((n) => {

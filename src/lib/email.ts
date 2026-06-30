@@ -42,11 +42,15 @@ export async function sendReviewSummaryEmail(
     ? `${s.reviewerName} revisou o lote e pediu ajustes.`
     : `${s.reviewerName} revisou e aprovou todos os posts. 🎉`;
 
+  const appUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://app.risedoc.com.br"
+  ).replace(/\/$/, "");
+
   const html = `
   <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F5F5F0;padding:28px 0;color:#1C1C1E">
     <div style="max-width:480px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #ECECE7">
-      <div style="background:#009E8E;padding:18px 24px;color:#fff;font-weight:700;font-size:15px;letter-spacing:.3px">
-        Risedoc <span style="opacity:.7;font-weight:500">= aprovações</span>
+      <div style="background:#009E8E;padding:18px 24px">
+        <img src="${appUrl}/brand/logo-white.png" alt="Risedoc" height="24" style="height:24px;width:auto;display:block" />
       </div>
       <div style="padding:24px">
         <div style="font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#9a9a96;font-weight:700">${s.clientName}</div>

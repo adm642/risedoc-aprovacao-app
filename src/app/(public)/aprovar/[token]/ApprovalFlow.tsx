@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LogoMark } from "@/components/Logo";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
 import {
   identifyReviewer,
@@ -280,11 +281,7 @@ export default function ApprovalFlow({
       <div className="app">
         <div className="topbar">
           <span className="brand">
-            <span className="eq sm">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
+            <LogoMark variant="color" height={26} />
             <span className="bn">{data.agencyName}</span>
           </span>
           <span className="meta">
@@ -782,19 +779,19 @@ export default function ApprovalFlow({
 }
 
 const CSS = `
-.ap-wrap{--ground:#F5F5F0;--surface:#fff;--text:#1C1C1E;--muted:rgba(28,28,30,.58);--line:#E6E6DF;--accent:#009E8E;--accent-h:#00B5A3;--accent-p:#007A6D;--warning:#F59E0B;--warning-ink:#b4730a;--success:#16A34A;font-family:"Sora",system-ui,-apple-system,sans-serif;color:var(--text);display:flex;justify-content:center;min-height:100vh;background:radial-gradient(120% 90% at 50% -10%,rgba(0,158,142,.10),transparent 60%),var(--ground)}
+.ap-wrap{--ground:#F5F5F0;--surface:#fff;--text:#1C1C1E;--muted:rgba(28,28,30,.58);--line:#E6E6DF;--accent:#009E8E;--accent-h:#00B5A3;--accent-p:#007A6D;--warning:#F59E0B;--warning-ink:#b4730a;--success:#16A34A;--display:var(--font-axiforma),system-ui,sans-serif;font-family:var(--font-sora),system-ui,-apple-system,sans-serif;color:var(--text);display:flex;justify-content:center;min-height:100vh;background:radial-gradient(120% 90% at 50% -10%,rgba(0,158,142,.10),transparent 60%),var(--ground)}
 .ap-wrap *{box-sizing:border-box}
 .ap-wrap .app{width:100%;max-width:440px;background:var(--surface);min-height:100vh;display:flex;flex-direction:column;position:relative;box-shadow:0 0 0 1px var(--line)}
 @media(min-width:480px){.ap-wrap{padding:28px 16px;align-items:flex-start}.ap-wrap .app{min-height:auto;border-radius:24px;overflow:hidden}}
 .ap-wrap .eq{display:inline-flex;flex-direction:column;gap:3px}.ap-wrap .eq span{display:block;width:22px;height:4px;border-radius:2px;background:var(--accent)}
 .ap-wrap .eq.sm span{width:15px;height:3px}.ap-wrap .eq.lg span{width:40px;height:7px;gap:6px}
 .ap-wrap .topbar{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
-.ap-wrap .brand{display:flex;align-items:center;gap:9px}.ap-wrap .bn{font-weight:700;font-size:17px;letter-spacing:-.02em}
+.ap-wrap .brand{display:flex;align-items:center;gap:9px}.ap-wrap .bn{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em}
 .ap-wrap .meta{margin-left:auto;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .ap-wrap .center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px 30px}
 .ap-wrap .pad{padding:36px 26px 30px;display:flex;flex-direction:column;flex:1}
 .ap-wrap .eyebrow{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
-.ap-wrap .title{font-weight:700;font-size:27px;line-height:1.13;letter-spacing:-.02em;margin:14px 0 0}.ap-wrap .title.sm{font-size:23px}
+.ap-wrap .title{font-family:var(--display);font-weight:700;font-size:27px;line-height:1.13;letter-spacing:-.02em;margin:14px 0 0}.ap-wrap .title.sm{font-size:23px}
 .ap-wrap .lede{font-size:15px;line-height:1.55;color:var(--muted);margin:12px 0 0;max-width:32ch}
 .ap-wrap .pill{display:inline-flex;align-items:baseline;gap:7px;margin-top:22px;padding:9px 16px;background:rgba(0,158,142,.10);color:var(--accent-p);border-radius:999px;font-size:14px;font-weight:600}.ap-wrap .pill b{font-size:19px}
 .ap-wrap .btn{font:inherit;font-size:15px;font-weight:600;border:none;border-radius:10px;cursor:pointer;padding:13px 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
