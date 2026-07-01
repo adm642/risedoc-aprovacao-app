@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseClickupContainer } from "@/lib/clickup";
+import { normalizeHandle } from "@/lib/handle";
 
 const NETWORKS = [
   "instagram",
@@ -20,6 +21,7 @@ const schema = z.object({
   networks: z.array(z.enum(NETWORKS)).default([]),
   photoUrl: z.string().url().max(600).optional(),
   clickupFolder: z.string().max(500).optional(),
+  instagramHandle: z.string().max(120).optional(),
 });
 
 export async function createProject(
@@ -28,6 +30,7 @@ export async function createProject(
     networks: string[];
     photoUrl?: string;
     clickupFolder?: string;
+    instagramHandle?: string;
   },
 ): Promise<{ ok: true; projectId: string } | { error: string }> {
   const parsed = schema.safeParse(input);
@@ -55,6 +58,7 @@ export async function createProject(
       clickup_folder_id: parsed.data.clickupFolder
         ? parseClickupContainer(parsed.data.clickupFolder)
         : null,
+      instagram_handle: normalizeHandle(parsed.data.instagramHandle),
     })
     .select("id")
     .single();

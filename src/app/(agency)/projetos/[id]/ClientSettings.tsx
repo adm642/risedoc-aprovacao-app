@@ -14,11 +14,13 @@ export default function ClientSettings({
   projectId,
   photoUrl,
   clickupFolder,
+  instagramHandle,
   name,
 }: {
   projectId: string;
   photoUrl: string | null;
   clickupFolder: string | null;
+  instagramHandle: string | null;
   name: string;
 }) {
   const router = useRouter();
@@ -26,6 +28,7 @@ export default function ClientSettings({
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(photoUrl);
   const [folder, setFolder] = useState(clickupFolder ?? "");
+  const [handle, setHandle] = useState(instagramHandle ?? "");
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -55,6 +58,7 @@ export default function ClientSettings({
       projectId,
       ...(newPhotoUrl ? { photoUrl: newPhotoUrl } : {}),
       clickupFolder: folder.trim() ? folder.trim() : null,
+      instagramHandle: handle.trim() ? handle.trim() : null,
     });
     setBusy("");
     if ("error" in res) return setErr(res.error);
@@ -121,6 +125,22 @@ export default function ClientSettings({
                   className="block flex-1 text-sm text-charcoal-900/60 file:mr-3 file:rounded-md file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:font-semibold file:text-white"
                 />
               </div>
+            </div>
+
+            <div className="mb-5">
+              <label className={labelCls}>@ do Instagram</label>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-charcoal-900/40">@</span>
+                <input
+                  className={inputCls}
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  placeholder="drahelenacosta"
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-charcoal-900/50">
+                Aparece no topo do preview do post que o cliente revisa.
+              </p>
             </div>
 
             <div className="mb-5">

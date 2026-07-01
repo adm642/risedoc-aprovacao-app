@@ -24,6 +24,7 @@ function sanitize(name: string) {
 export default function NovoCliente() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [handle, setHandle] = useState("");
   const [networks, setNetworks] = useState<string[]>(["instagram"]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [clickupFolder, setClickupFolder] = useState("");
@@ -56,6 +57,7 @@ export default function NovoCliente() {
       networks,
       photoUrl,
       clickupFolder: clickupFolder || undefined,
+      instagramHandle: handle || undefined,
     });
     if ("error" in res) {
       setBusy("");
@@ -115,6 +117,23 @@ export default function NovoCliente() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex.: Dra. Helena Costa"
         />
+      </div>
+
+      <div className="mb-5">
+        <label className={labelCls}>@ do Instagram</label>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-semibold text-charcoal-900/40">@</span>
+          <input
+            className={inputCls}
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="drahelenacosta"
+          />
+        </div>
+        <p className="mt-1 text-[11px] text-charcoal-900/50">
+          Aparece no topo do preview quando o cliente revisa os posts. Pode colar
+          o @ ou o link do perfil.
+        </p>
       </div>
 
       <div className="mb-5">

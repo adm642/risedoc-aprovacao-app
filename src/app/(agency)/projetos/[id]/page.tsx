@@ -37,7 +37,7 @@ export default async function ProjetoPage({
 
   const { data: project } = await sb
     .from("projects")
-    .select("id, name, photo_url, clickup_folder_id")
+    .select("id, name, photo_url, clickup_folder_id, instagram_handle")
     .eq("id", id)
     .maybeSingle();
   if (!project) notFound();
@@ -115,6 +115,8 @@ export default async function ProjetoPage({
             photoUrl={(project as any).photo_url ?? null}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             clickupFolder={(project as any).clickup_folder_id ?? null}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            instagramHandle={(project as any).instagram_handle ?? null}
             name={project.name}
           />
           <Link

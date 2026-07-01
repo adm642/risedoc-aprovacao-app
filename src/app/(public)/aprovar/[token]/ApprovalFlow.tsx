@@ -274,6 +274,7 @@ export default function ApprovalFlow({
   const approvedCount = resp.filter((s) => s === "approved").length;
   const changesCount = resp.filter((s) => s === "changes").length;
   const s = post?.slides[slide];
+  const handle = data.clientHandle ?? "cliente";
 
   return (
     <div className="ap-wrap">
@@ -452,9 +453,17 @@ export default function ApprovalFlow({
 
               <div className="preview">
                 <div className="ighead">
-                  <span className="ava">{data.agencyName.charAt(0)}</span>
+                  {data.clientPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="ava" src={data.clientPhoto} alt={data.clientName} />
+                  ) : (
+                    <span className="ava">
+                      {(data.clientName || handle).charAt(0).toUpperCase()}
+                    </span>
+                  )}
                   <span className="iguser">
-                    @cliente<small>{post.kicker}</small>
+                    @{handle}
+                    {post.kicker && <small>{post.kicker}</small>}
                   </span>
                   <span className="more">⋯</span>
                 </div>
@@ -533,7 +542,7 @@ export default function ApprovalFlow({
                   <span className="right">🔖</span>
                 </div>
                 <div className="cap">
-                  <b>@cliente</b> {post.caption}
+                  <b>@{handle}</b> {post.caption}
                 </div>
               </div>
 
@@ -816,6 +825,7 @@ const CSS = `
 .ap-wrap .preview{margin:12px 18px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .ap-wrap .ighead{display:flex;align-items:center;gap:10px;padding:11px 13px}
 .ap-wrap .ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-p));display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
+.ap-wrap img.ava{object-fit:cover}
 .ap-wrap .iguser{font-size:13px;font-weight:600;line-height:1.2}.ap-wrap .iguser small{display:block;font-weight:400;color:var(--muted);font-size:11px}
 .ap-wrap .more{margin-left:auto;color:var(--muted)}
 .ap-wrap .media{position:relative;aspect-ratio:4/5;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;color:#fff;overflow:hidden}

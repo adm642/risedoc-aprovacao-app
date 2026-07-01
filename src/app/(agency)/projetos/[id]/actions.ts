@@ -4,11 +4,13 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { parseClickupContainer } from "@/lib/clickup";
+import { normalizeHandle } from "@/lib/handle";
 
 const schema = z.object({
   projectId: z.string().uuid(),
   photoUrl: z.string().url().max(600).nullable().optional(),
   clickupFolder: z.string().max(500).nullable().optional(),
+  instagramHandle: z.string().max(120).nullable().optional(),
 });
 
 export async function updateProjectSettings(
@@ -31,6 +33,9 @@ export async function updateProjectSettings(
     patch.clickup_folder_id = d.clickupFolder
       ? parseClickupContainer(d.clickupFolder)
       : null;
+  }
+  if (d.instagramHandle !== undefined) {
+    patch.instagram_handle = normalizeHandle(d.instagramHandle);
   }
   if (Object.keys(patch).length === 0) return { ok: true };
 

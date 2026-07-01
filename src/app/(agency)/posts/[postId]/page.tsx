@@ -29,7 +29,7 @@ export default async function PostDetailPage({
   const { data: post } = await sb
     .from("posts")
     .select(
-      "id, internal_title, status, suggested_publish_at, clickup_task_id, project_id, projects ( name ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
+      "id, internal_title, status, suggested_publish_at, clickup_task_id, project_id, projects ( name, instagram_handle ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
     )
     .eq("id", postId)
     .maybeSingle();
@@ -102,7 +102,8 @@ export default async function PostDetailPage({
               </div>
             )}
             <div className="whitespace-pre-line p-3 text-[13px] leading-relaxed">
-              <b>@cliente</b> {t?.caption}
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <b>@{(project as any)?.instagram_handle ?? "cliente"}</b> {t?.caption}
             </div>
           </div>
         </div>
