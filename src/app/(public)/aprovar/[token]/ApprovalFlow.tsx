@@ -429,21 +429,41 @@ export default function ApprovalFlow({
         {step === "review" && post && (
           <>
             <div className="progress">
-              {posts.map((p, i) => (
-                <button
-                  key={p.id}
-                  className={`thumb ${i === cur ? "current" : ""}`}
-                  data-state={resp[i] ?? "none"}
-                  style={{ background: p.slides[0].bg, color: "#fff" }}
-                  onClick={() => {
-                    setCur(i);
-                    setSlide(0);
-                  }}
-                >
-                  {i + 1}
-                  <span className="dot"></span>
-                </button>
-              ))}
+              {posts.map((p, i) => {
+                const cover = p.media.find((m) => m.type === "image");
+                const vid = p.media.find((m) => m.type === "video");
+                return (
+                  <button
+                    key={p.id}
+                    className={`thumb ${i === cur ? "current" : ""}`}
+                    data-state={resp[i] ?? "none"}
+                    onClick={() => {
+                      setCur(i);
+                      setSlide(0);
+                    }}
+                  >
+                    <span
+                      className="thumbmedia"
+                      style={!cover && !vid ? { background: p.slides[0].bg } : undefined}
+                    >
+                      {cover ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={cover.url} alt="" className="thumbimg" />
+                      ) : vid ? (
+                        <video
+                          src={vid.url}
+                          className="thumbimg"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                      ) : null}
+                      <span className="thumbnum">{i + 1}</span>
+                    </span>
+                    <span className="dot"></span>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="body">
@@ -815,9 +835,12 @@ const CSS = `
 .ap-wrap .secbtn{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;margin-top:14px;text-decoration:underline}
 .ap-wrap .secbtn:hover{color:var(--text)}
 .ap-wrap .progress{display:flex;gap:9px;padding:14px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}.ap-wrap .progress::-webkit-scrollbar{display:none}
-.ap-wrap .thumb{flex:0 0 auto;width:44px;height:44px;border-radius:6px;border:2px solid var(--line);cursor:pointer;position:relative;display:grid;place-items:center;font-size:13px;font-weight:700}
+.ap-wrap .thumb{flex:0 0 auto;width:46px;height:46px;border-radius:8px;border:2px solid var(--line);cursor:pointer;position:relative;padding:0;background:none}
 .ap-wrap .thumb.current{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,158,142,.25)}
-.ap-wrap .thumb .dot{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--line)}
+.ap-wrap .thumbmedia{position:absolute;inset:0;border-radius:6px;overflow:hidden;background:var(--line);display:block}
+.ap-wrap .thumbimg{width:100%;height:100%;object-fit:cover;display:block}
+.ap-wrap .thumbnum{position:absolute;top:3px;left:3px;z-index:2;font-size:10px;font-weight:700;line-height:1.5;color:#fff;background:rgba(0,0,0,.55);padding:0 5px;border-radius:5px}
+.ap-wrap .thumb .dot{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;border:2px solid #fff;background:var(--line);z-index:3}
 .ap-wrap .thumb[data-state=approved] .dot{background:var(--success)}.ap-wrap .thumb[data-state=changes] .dot{background:var(--warning)}
 .ap-wrap .body{flex:1;overflow-y:auto;padding-bottom:92px}
 .ap-wrap .nettabs{display:flex;gap:6px;padding:14px 18px 4px}
