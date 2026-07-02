@@ -35,10 +35,17 @@ export default async function NovoPostPage({
         <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
         Voltar para {project.name}
       </Link>
-      <h1 className="mb-1 mt-3 font-display text-2xl font-bold tracking-tight text-charcoal-900">
-        Novo post
-      </h1>
-      <p className="mb-6 text-sm text-charcoal-900/60">{project.name}</p>
+      <div className="mb-6 mt-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-900">
+          {project.name}
+        </div>
+        <h1 className="mt-1 font-display text-[28px] font-bold leading-tight tracking-tight text-charcoal-900">
+          Novo post
+        </h1>
+        <p className="mt-0.5 text-sm text-charcoal-900/60">
+          Monte o post e adicione ao lote de aprovação do cliente.
+        </p>
+      </div>
 
       <NovoPost
         projectId={id}

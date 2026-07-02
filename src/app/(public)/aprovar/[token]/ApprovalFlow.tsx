@@ -100,11 +100,35 @@ export default function ApprovalFlow({
   const [marks, setMarks] = useState<number[][]>(posts.map(() => []));
 
   const [modal, setModal] = useState<null | "changes" | "approve">(null);
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const bulkActiveRef = useRef(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const lastFocusRef = useRef<HTMLElement | null>(null);
   const [cats, setCats] = useState<string[]>([]);
   const [slideSel, setSlideSel] = useState<number[]>([]);
   const [comment, setComment] = useState("");
   const [cardNotes, setCardNotes] = useState<Record<number, string>>({});
   const [mSlide, setMSlide] = useState(0);
+
+  // Acessibilidade do bottom-sheet: foco ao abrir, Escape fecha, foco devolvido ao fechar.
+  const anyModalOpen = modal !== null || confirmAll;
+  useEffect(() => {
+    if (!anyModalOpen) return;
+    lastFocusRef.current = document.activeElement as HTMLElement | null;
+    modalRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (bulkActiveRef.current) return; // não interrompe o envio em lote
+      setModal(null);
+      setConfirmAll(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      lastFocusRef.current?.focus?.();
+    };
+  }, [anyModalOpen]);
 
   const post: ApprovalPost | undefined = posts[cur];
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -245,10 +269,16 @@ export default function ApprovalFlow({
 
   async function approveAll() {
     setBusy(true);
+    bulkActiveRef.current = true;
     const updated = [...resp];
+    const total = updated.filter((s) => s === null).length;
+    let done = 0;
+    setBulkProgress({ done, total });
     for (let i = 0; i < posts.length; i++) {
       if (updated[i] !== null) continue;
       if (!reviewerId) break;
+      done += 1;
+      setBulkProgress({ done, total });
       await submitFeedback({
         token,
         reviewerId,
@@ -262,6 +292,9 @@ export default function ApprovalFlow({
     }
     setResp(updated);
     setBusy(false);
+    bulkActiveRef.current = false;
+    setBulkProgress(null);
+    setConfirmAll(false);
     setStep("done");
     notifyDone();
   }
@@ -289,6 +322,7 @@ export default function ApprovalFlow({
     });
   }
 
+  const pendingCount = resp.filter((s) => s === null).length;
   const approvedCount = resp.filter((s) => s === "approved").length;
   const changesCount = resp.filter((s) => s === "changes").length;
   const s = post?.slides[slide];
@@ -677,7 +711,7 @@ export default function ApprovalFlow({
               )}
 
               <div className="all">
-                <button onClick={approveAll} disabled={busy}>
+                <button onClick={() => { setErr(""); setConfirmAll(true); }} disabled={busy}>
                   Está tudo certo? Aprovar todos de uma vez
                 </button>
               </div>
@@ -755,7 +789,14 @@ export default function ApprovalFlow({
       {/* MODAL */}
       {modal && post && (
         <div className="scrim" onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div className="modal">
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={modal === "changes" ? "Pedir ajuste" : "Aprovar post"}
+            tabIndex={-1}
+            ref={modalRef}
+          >
             <div className="seg">
               <button className={modal === "changes" ? "on changes" : ""} onClick={() => setModal("changes")}>
                 <Pencil size={14} strokeWidth={1.5} aria-hidden />
@@ -909,6 +950,65 @@ export default function ApprovalFlow({
           </div>
         </div>
       )}
+
+      {/* CONFIRMAÇÃO — aprovar todos de uma vez */}
+      {confirmAll && (
+        <div
+          className="scrim"
+          onClick={(e) =>
+            e.target === e.currentTarget && !bulkProgress && setConfirmAll(false)
+          }
+        >
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Aprovar todos os posts"
+            tabIndex={-1}
+            ref={modalRef}
+          >
+            <div className="confirm">
+              {bulkProgress ? (
+                <>
+                  <span className="eq lg loading" style={{ margin: "10px auto 14px" }}>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </span>
+                  <div className="big" role="status" aria-live="polite">
+                    Enviando {bulkProgress.done} de {bulkProgress.total}…
+                  </div>
+                  <p>Aprovando seus posts. Só um instante.</p>
+                </>
+              ) : (
+                <>
+                  <div className="doneill sm">
+                    <span className="check">
+                      <Check size={15} strokeWidth={2.5} aria-hidden />
+                    </span>
+                  </div>
+                  <div className="big">
+                    Aprovar {plural(pendingCount, "post")} de uma vez?
+                  </div>
+                  <p>
+                    Você não vai revisar um por um. Todos os posts pendentes ficam
+                    liberados para publicação.
+                  </p>
+                  {err && <p className="err">{err}</p>}
+                  <div className="macts">
+                    <button className="btn btn-ghost" onClick={() => setConfirmAll(false)}>
+                      Cancelar
+                    </button>
+                    <button className="btn btn-primary" disabled={busy} onClick={approveAll}>
+                      Sim, aprovar todos
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -982,9 +1082,10 @@ const CSS = `
 .ap-wrap .scrub{position:absolute;left:0;right:0;bottom:0;padding:10px 14px 14px;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);z-index:5}
 .ap-wrap .scrub .hint{font-size:11px;opacity:.92;margin-bottom:8px;text-shadow:0 1px 6px rgba(0,0,0,.5);display:flex;align-items:center;gap:5px}
 .ap-wrap .scrub .hint svg{flex:none}
-.ap-wrap .track{position:relative;height:22px;display:flex;align-items:center;cursor:pointer}
-.ap-wrap .track .bar{position:absolute;left:0;right:0;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.ap-wrap .track{position:relative;height:44px;display:flex;align-items:center;cursor:pointer}
+.ap-wrap .track .bar{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
 .ap-wrap .pin{position:absolute;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--warning);border:2px solid #fff;cursor:pointer;z-index:6}
+.ap-wrap .pin::before{content:'';position:absolute;inset:-12px}
 .ap-wrap .pin::after{content:attr(data-t);position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:var(--warning-ink);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap}
 .ap-wrap .dur{font-size:11px;margin-top:4px;text-align:right;opacity:.85}
 .ap-wrap .igactions{display:flex;align-items:center;gap:16px;padding:10px 13px 4px;color:var(--text)}.ap-wrap .igactions span{display:inline-flex;align-items:center}.ap-wrap .igactions .right{margin-left:auto}
@@ -1010,6 +1111,7 @@ const CSS = `
 .ap-wrap .scrim{position:fixed;inset:0;background:rgba(28,28,30,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0}
 @media(min-width:480px){.ap-wrap .scrim{align-items:center;padding:16px}}
 .ap-wrap .modal{width:100%;max-width:440px;background:#fff;border-radius:18px 18px 0 0;padding:22px 22px calc(22px + env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto}
+.ap-wrap .modal:focus{outline:none}
 @media(min-width:480px){.ap-wrap .modal{border-radius:18px}}
 .ap-wrap .seg{display:flex;padding:4px;background:var(--ground);border-radius:10px;margin-bottom:18px}
 .ap-wrap .seg button{flex:1;border:none;background:none;font:inherit;font-size:14px;font-weight:600;padding:9px;border-radius:7px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px}

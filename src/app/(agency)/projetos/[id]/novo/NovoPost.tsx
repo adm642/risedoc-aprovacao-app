@@ -2,6 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AlertCircle,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clapperboard,
+  Film,
+  GalleryVertical,
+  ImagePlus,
+  Images,
+  Link2,
+  Loader2,
+  SquareKanban,
+} from "lucide-react";
+import Button from "@/components/ui/Button";
 import { uploadMedia } from "@/lib/upload";
 import { createPost, getClickupCards } from "./actions";
 import type { ClickupCard } from "@/lib/clickup";
@@ -13,6 +28,12 @@ const FORMATS = [
   { v: "reels", label: "Reels (vídeo)", accept: "video/mp4,video/quicktime", multiple: false },
   { v: "story", label: "Story (imagem)", accept: "image/*", multiple: false },
 ] as const;
+
+const FORMAT_ICONS = {
+  feed: Images,
+  reels: Clapperboard,
+  story: GalleryVertical,
+} as const;
 
 function sanitize(name: string) {
   return name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
@@ -135,15 +156,20 @@ export default function NovoPost({
   }
 
   const inputCls =
-    "w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-[15px] outline-none focus:border-brand-500 focus:bg-white";
+    "w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-[15px] outline-none transition-colors focus:border-brand-500 focus:bg-white";
   const labelCls =
     "mb-2 block text-xs font-semibold uppercase tracking-wide text-charcoal-900/60";
 
+  const MediaIcon = fmt.v === "reels" ? Clapperboard : ImagePlus;
+
   return (
     <form onSubmit={submit} className="max-w-2xl">
-      <div className="mb-5">
-        <label className={labelCls}>Título interno</label>
+      <div className="mb-6">
+        <label htmlFor="np-title" className={labelCls}>
+          Título interno
+        </label>
         <input
+          id="np-title"
           className={inputCls}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -151,78 +177,113 @@ export default function NovoPost({
         />
       </div>
 
-      <div className="mb-5">
-        <label className={labelCls}>Formato</label>
-        <div className="flex flex-wrap gap-2">
-          {FORMATS.map((f) => (
-            <button
-              type="button"
-              key={f.v}
-              onClick={() => {
-                setFormat(f.v);
-                setFiles([]);
-              }}
-              className={`rounded-full border-[1.5px] px-4 py-2 text-[13px] font-semibold transition-colors ${
-                format === f.v
-                  ? "border-brand-500 bg-brand-500/10 text-brand-900"
-                  : "border-neutral-100 bg-white text-charcoal-900/60"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+      <div className="mb-6">
+        <span className={labelCls}>Formato</span>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Formato do post">
+          {FORMATS.map((f) => {
+            const Icon = FORMAT_ICONS[f.v];
+            const on = format === f.v;
+            return (
+              <button
+                type="button"
+                key={f.v}
+                aria-pressed={on}
+                onClick={() => {
+                  setFormat(f.v);
+                  setFiles([]);
+                }}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-full border-[1.5px] px-4 py-2 text-[13px] font-semibold transition-colors ${
+                  on
+                    ? "border-brand-500 bg-brand-500/10 text-brand-900"
+                    : "border-neutral-100 bg-white text-charcoal-900/60 hover:border-brand-500/40"
+                }`}
+              >
+                <Icon size={15} strokeWidth={1.5} aria-hidden />
+                {f.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="mb-5">
-        <label className={labelCls}>
+      <div className="mb-6">
+        <span className={labelCls}>
           Mídia {fmt.multiple ? "(uma ou mais imagens)" : fmt.v === "reels" ? "(um vídeo MP4)" : "(uma imagem)"}
+        </span>
+        <label
+          className="flex cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[16px] border-2 border-dashed border-neutral-200 bg-white px-4 py-8 text-center transition-colors hover:border-brand-500/50 hover:bg-brand-500/[0.03] has-[:focus-visible]:border-brand-500"
+        >
+          <input
+            key={format}
+            type="file"
+            accept={fmt.accept}
+            multiple={fmt.multiple}
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+            className="sr-only"
+          />
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-brand-500/10 text-brand-900">
+            <MediaIcon size={20} strokeWidth={1.5} aria-hidden />
+          </span>
+          <span className="text-sm font-semibold text-charcoal-900">
+            {files.length > 0
+              ? `${files.length} arquivo(s) selecionado(s) — trocar`
+              : fmt.v === "reels"
+                ? "Escolher o vídeo"
+                : fmt.multiple
+                  ? "Escolher as imagens"
+                  : "Escolher a imagem"}
+          </span>
+          <span className="text-xs text-charcoal-900/50">
+            {fmt.v === "reels" ? "MP4 ou MOV" : "JPG, PNG ou WebP"}
+            {fmt.multiple ? " · a ordem vira o carrossel" : ""}
+          </span>
         </label>
-        <input
-          type="file"
-          accept={fmt.accept}
-          multiple={fmt.multiple}
-          onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-          className="block w-full rounded-[10px] border-2 border-dashed border-neutral-100 bg-neutral-50 px-4 py-6 text-sm text-charcoal-900/60 file:mr-4 file:rounded-md file:border-0 file:bg-brand-500 file:px-4 file:py-2 file:font-semibold file:text-white"
-        />
+
         {files.length > 0 && (
           <>
             {files.length > 1 && (
-              <p className="mt-2 text-xs text-charcoal-900/55">
+              <p className="mt-3 text-xs text-charcoal-900/55">
                 Ordem do carrossel — use as setas para reorganizar:
               </p>
             )}
             <div className="mt-2 flex flex-wrap gap-3">
               {files.map((f, i) => (
-                <div key={i} className="w-24 rounded-lg border border-neutral-100 bg-white p-1.5">
-                  <div className="relative h-24 w-full overflow-hidden rounded bg-neutral-50">
+                <div
+                  key={i}
+                  className="w-[104px] rounded-[10px] border border-neutral-100 bg-white p-1.5"
+                >
+                  <div className="relative h-24 w-full overflow-hidden rounded-[6px] bg-neutral-50">
                     {f.type.startsWith("image") ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="grid h-full place-items-center text-2xl">🎬</div>
+                      <div className="grid h-full place-items-center text-charcoal-900/40">
+                        <Film size={24} strokeWidth={1.5} aria-hidden />
+                      </div>
                     )}
-                    <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 text-[10px] font-bold text-white">
+                    <span className="absolute left-1 top-1 rounded bg-charcoal-900/70 px-1.5 text-[10px] font-bold text-white">
                       {i + 1}
                     </span>
                   </div>
                   {files.length > 1 && (
-                    <div className="mt-1 flex justify-between">
+                    <div className="mt-1 flex gap-1">
                       <button
                         type="button"
                         disabled={i === 0}
                         onClick={() => move(i, -1)}
-                        className="rounded px-2 text-sm font-bold text-brand-900 disabled:opacity-30"
+                        aria-label={`Mover mídia ${i + 1} para a esquerda`}
+                        className="grid h-10 flex-1 place-items-center rounded-[6px] text-brand-900 transition-colors hover:bg-brand-500/10 disabled:opacity-30 disabled:hover:bg-transparent"
                       >
-                        ←
+                        <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
                       </button>
                       <button
                         type="button"
                         disabled={i === files.length - 1}
                         onClick={() => move(i, 1)}
-                        className="rounded px-2 text-sm font-bold text-brand-900 disabled:opacity-30"
+                        aria-label={`Mover mídia ${i + 1} para a direita`}
+                        className="grid h-10 flex-1 place-items-center rounded-[6px] text-brand-900 transition-colors hover:bg-brand-500/10 disabled:opacity-30 disabled:hover:bg-transparent"
                       >
-                        →
+                        <ChevronRight size={16} strokeWidth={1.5} aria-hidden />
                       </button>
                     </div>
                   )}
@@ -233,33 +294,50 @@ export default function NovoPost({
         )}
       </div>
 
-      <div className="mb-5">
-        <label className={labelCls}>Legenda</label>
+      <div className="mb-6">
+        <label htmlFor="np-caption" className={labelCls}>
+          Legenda
+        </label>
         <textarea
+          id="np-caption"
           className={`${inputCls} min-h-[100px] resize-y`}
           value={caption}
           maxLength={2200}
           onChange={(e) => setCaption(e.target.value)}
           placeholder="Escreva a legenda… use #hashtags"
         />
-        <div className="mt-1 text-right text-[11px] text-charcoal-900/50">
+        <div className="mt-1 text-right text-[11px] tabular-nums text-charcoal-900/50">
           {caption.length}/2200
         </div>
       </div>
 
-      <div className="mb-5 flex flex-col gap-5 sm:flex-row">
+      <div className="mb-6 flex flex-col gap-6 sm:flex-row">
         <div className="flex-1">
-          <label className={labelCls}>Data sugerida</label>
-          <input
-            type="datetime-local"
-            className={inputCls}
-            value={suggestedAt}
-            onChange={(e) => setSuggestedAt(e.target.value)}
-          />
+          <label htmlFor="np-date" className={labelCls}>
+            Data sugerida
+          </label>
+          <div className="relative">
+            <Calendar
+              size={16}
+              strokeWidth={1.5}
+              aria-hidden
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-900/40"
+            />
+            <input
+              id="np-date"
+              type="datetime-local"
+              className={`${inputCls} pl-11`}
+              value={suggestedAt}
+              onChange={(e) => setSuggestedAt(e.target.value)}
+            />
+          </div>
         </div>
         <div className="flex-1">
-          <label className={labelCls}>Lote de aprovação</label>
+          <label htmlFor="np-group" className={labelCls}>
+            Lote de aprovação
+          </label>
           <select
+            id="np-group"
             className={inputCls}
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
@@ -273,6 +351,7 @@ export default function NovoPost({
           </select>
           {groupId === "__new__" && (
             <input
+              aria-label="Nome do novo lote"
               className={`${inputCls} mt-2`}
               value={newGroupName}
               onChange={(e) => setNewGroupName(e.target.value)}
@@ -282,39 +361,54 @@ export default function NovoPost({
         </div>
       </div>
 
-      <div className="mb-5">
-        <label className={labelCls}>Card no ClickUp (opcional)</label>
+      <div className="mb-6">
+        <label htmlFor="np-clickup" className={labelCls}>
+          Card no ClickUp (opcional)
+        </label>
 
         {hasClickupFolder && !pasteMode ? (
           <>
             {loadingCards ? (
-              <div className={`${inputCls} text-charcoal-900/50`}>
+              <div
+                className={`${inputCls} flex items-center gap-2.5 text-charcoal-900/50`}
+                role="status"
+              >
+                <Loader2 size={16} strokeWidth={1.5} aria-hidden className="animate-spin text-brand-500" />
                 Carregando cards do ClickUp…
               </div>
             ) : (cards ?? []).length > 0 ? (
-              <select
-                className={inputCls}
-                value={clickupLink}
-                onChange={(e) => setClickupLink(e.target.value)}
-              >
-                <option value="">— Escolha o card deste post —</option>
-                {Object.entries(cardsByList).map(([listName, list]) => (
-                  <optgroup key={listName} label={listName}>
-                    {list.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                        {c.status ? ` · ${c.status}` : ""}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
+              <div className="relative">
+                <SquareKanban
+                  size={16}
+                  strokeWidth={1.5}
+                  aria-hidden
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-900/40"
+                />
+                <select
+                  id="np-clickup"
+                  className={`${inputCls} pl-11`}
+                  value={clickupLink}
+                  onChange={(e) => setClickupLink(e.target.value)}
+                >
+                  <option value="">— Escolha o card deste post —</option>
+                  {Object.entries(cardsByList).map(([listName, list]) => (
+                    <optgroup key={listName} label={listName}>
+                      {list.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                          {c.status ? ` · ${c.status}` : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
             ) : (
               <div className={`${inputCls} text-charcoal-900/50`}>
                 Nenhum card encontrado na pasta vinculada.
               </div>
             )}
-            <p className="mt-1 text-[11px] text-charcoal-900/50">
+            <p className="mt-1.5 text-[11px] text-charcoal-900/50">
               Cards puxados da pasta do cliente no ClickUp.{" "}
               <button
                 type="button"
@@ -330,13 +424,22 @@ export default function NovoPost({
           </>
         ) : (
           <>
-            <input
-              className={inputCls}
-              value={clickupLink}
-              onChange={(e) => setClickupLink(e.target.value)}
-              placeholder="Cole o link do card (ex.: app.clickup.com/t/abc123)"
-            />
-            <p className="mt-1 text-[11px] text-charcoal-900/50">
+            <div className="relative">
+              <Link2
+                size={16}
+                strokeWidth={1.5}
+                aria-hidden
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-charcoal-900/40"
+              />
+              <input
+                id="np-clickup"
+                className={`${inputCls} pl-11`}
+                value={clickupLink}
+                onChange={(e) => setClickupLink(e.target.value)}
+                placeholder="Cole o link do card (ex.: app.clickup.com/t/abc123)"
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-charcoal-900/50">
               Quando o cliente pedir ajuste neste post, criamos uma subtarefa neste card.
               {hasClickupFolder && (
                 <>
@@ -355,23 +458,34 @@ export default function NovoPost({
         )}
       </div>
 
-      {err && <p className="mb-4 text-sm text-status-danger">{err}</p>}
+      {err && (
+        <div
+          role="alert"
+          className="mb-5 flex items-start gap-2.5 rounded-[10px] border border-status-danger/25 bg-status-danger/5 px-4 py-3 text-sm text-status-danger"
+        >
+          <AlertCircle size={16} strokeWidth={1.5} aria-hidden className="mt-0.5 shrink-0" />
+          {err}
+        </div>
+      )}
 
-      <div className="flex gap-3">
-        <button
-          type="button"
+      <div className="flex gap-3 border-t border-neutral-100 pt-6">
+        <Button
+          variant="ghost"
+          size="lg"
           onClick={() => router.push(`/projetos/${projectId}`)}
-          className="rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-5 py-3 text-[15px] font-semibold text-charcoal-900"
         >
           Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={!!busy}
-          className="flex-1 rounded-[10px] bg-brand-500 px-5 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-brand-400 disabled:opacity-60"
-        >
-          {busy || `Adicionar ao lote — ${projectName}`}
-        </button>
+        </Button>
+        <Button type="submit" size="lg" disabled={!!busy} className="flex-1">
+          {busy ? (
+            <>
+              <Loader2 size={16} strokeWidth={2} aria-hidden className="animate-spin" />
+              {busy}
+            </>
+          ) : (
+            `Adicionar ao lote — ${projectName}`
+          )}
+        </Button>
       </div>
     </form>
   );

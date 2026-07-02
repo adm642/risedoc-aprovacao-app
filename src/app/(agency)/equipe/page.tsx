@@ -41,12 +41,17 @@ export default async function EquipePage() {
 
   return (
     <main className="px-8 py-7">
-      <h1 className="font-display text-2xl font-bold tracking-tight text-charcoal-900">
-        Equipe
-      </h1>
-      <p className="mb-6 text-sm text-charcoal-900/60">
-        {members.length} membro(s){isAdmin ? "" : " · somente leitura"}
-      </p>
+      <div className="mb-7">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-900">
+          Painel da agência
+        </div>
+        <h1 className="mt-1 font-display text-[28px] font-bold leading-tight tracking-tight text-charcoal-900">
+          Equipe
+        </h1>
+        <p className="mt-0.5 text-sm text-charcoal-900/60">
+          {members.length} membro(s){isAdmin ? "" : " · somente leitura"}
+        </p>
+      </div>
       <EquipeManager members={members} isAdmin={isAdmin} currentUserId={user.id} />
     </main>
   );
