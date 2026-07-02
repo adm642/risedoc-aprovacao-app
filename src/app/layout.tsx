@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -30,6 +30,12 @@ export const metadata: Metadata = {
   },
   description:
     "Plataforma de aprovação de conteúdo da Risedoc — revise e aprove os posts da sua clínica em poucos minutos.",
+};
+
+export const viewport: Viewport = {
+  // permite usar env(safe-area-inset-*) no iPhone (barra do navegador / home indicator)
+  viewportFit: "cover",
+  themeColor: "#009E8E",
 };
 
 export default function RootLayout({

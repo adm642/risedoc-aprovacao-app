@@ -54,7 +54,9 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="mb-4 w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-[15px] outline-none focus:border-brand-500 focus:bg-white"
+          autoComplete="email"
+          inputMode="email"
+          className="mb-4 w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-base outline-none focus:border-brand-500 focus:bg-white"
         />
 
         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-charcoal-900/60">
@@ -65,7 +67,8 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          className="mb-5 w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-[15px] outline-none focus:border-brand-500 focus:bg-white"
+          autoComplete="current-password"
+          className="mb-5 w-full rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-4 py-3 text-base outline-none focus:border-brand-500 focus:bg-white"
         />
 
         {err && <p className="mb-4 text-sm text-status-danger">{err}</p>}

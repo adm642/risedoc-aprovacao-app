@@ -138,9 +138,9 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="mt-4 flex gap-4 border-t border-neutral-100 pt-3.5 text-xs text-charcoal-900/60">
-                <Stat n={c("awaiting_review")} label="aguardando" />
-                <Stat n={c("change_requested")} label="ajustes" color="#b4730a" />
-                <Stat n={c("approved")} label="aprovados" color="#16A34A" />
+                <Stat n={c("awaiting_review")} label="aguardando" color="#1D4ED8" />
+                <Stat n={c("change_requested")} label="ajustes" color="#92400E" />
+                <Stat n={c("approved")} label="aprovados" color="#15803D" />
               </div>
             </Link>
           );

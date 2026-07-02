@@ -13,7 +13,7 @@ export type CalendarPost = {
 
 const STATUS: Record<string, { dot: string; label: string }> = {
   draft: { dot: "#9a9a96", label: "Rascunho" },
-  awaiting_review: { dot: "#F59E0B", label: "Aguardando" },
+  awaiting_review: { dot: "#2563EB", label: "Aguardando" },
   change_requested: { dot: "#F59E0B", label: "Ajuste" },
   approved: { dot: "#16A34A", label: "Aprovado" },
 };

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LogoMark } from "@/components/Logo";
+import { plural } from "@/lib/plural";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
 import {
   identifyReviewer,
@@ -295,7 +296,7 @@ export default function ApprovalFlow({
         {/* LOADING */}
         {step === "loading" && (
           <section className="center">
-            <span className="eq lg">
+            <span className="eq lg loading">
               <span></span>
               <span></span>
               <span></span>
@@ -316,8 +317,8 @@ export default function ApprovalFlow({
             </span>
             <h1 className="title">{firstName}, é você?</h1>
             <p className="lede">
-              Você tem {posts.length} post(s) para revisar. Confirma que é você
-              pra continuar.
+              Você tem {plural(posts.length, "post")} para revisar. Confirma que
+              é você pra continuar.
             </p>
             {err && <p className="err">{err}</p>}
             <button
@@ -362,14 +363,15 @@ export default function ApprovalFlow({
               {data.clientName ? data.clientName : "Olá!"}
             </span>
             <h1 className="title">
-              Você recebeu {posts.length} posts para revisar
+              Você recebeu {plural(posts.length, "post")} para revisar
             </h1>
             <p className="lede">
               Dá uma olhada em cada um e diz o que aprovar ou o que ajustar. Leva
               uns 2 minutos.
             </p>
             <span className="pill">
-              <b>{posts.length}</b> posts aguardando você
+              <b>{posts.length}</b>{" "}
+              {posts.length === 1 ? "post aguardando" : "posts aguardando"} você
             </span>
             <button
               className="btn btn-primary btn-lg"
@@ -396,32 +398,44 @@ export default function ApprovalFlow({
             <p className="lede">
               Só pra registrar quem aprovou cada post. Fica entre você e a equipe.
             </p>
-            <div className="field">
-              <label>Seu nome</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome"
-              />
-            </div>
-            <div className="field">
-              <label>E-mail</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@email.com"
-              />
-            </div>
-            {err && <p className="err">{err}</p>}
-            <button
-              className="btn btn-primary btn-lg"
-              style={{ width: "100%", marginTop: 22 }}
-              disabled={busy}
-              onClick={continueIdentify}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                continueIdentify();
+              }}
             >
-              {busy ? "..." : "Continuar"}
-            </button>
+              <div className="field">
+                <label>Seu nome</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                  enterKeyHint="next"
+                />
+              </div>
+              <div className="field">
+                <label>E-mail</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="voce@email.com"
+                  autoComplete="email"
+                  inputMode="email"
+                  enterKeyHint="go"
+                />
+              </div>
+              {err && <p className="err">{err}</p>}
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg"
+                style={{ width: "100%", marginTop: 22 }}
+                disabled={busy}
+              >
+                {busy ? "..." : "Continuar"}
+              </button>
+            </form>
           </section>
         )}
 
@@ -629,7 +643,7 @@ export default function ApprovalFlow({
               <span className="check">✓</span>
             </div>
             <span className="eyebrow">Revisão enviada</span>
-            <h1 className="title sm">Prontinho, obrigada!</h1>
+            <h1 className="title sm">Prontinho, tudo enviado!</h1>
             <p className="lede">
               A equipe da {data.agencyName} já recebeu suas respostas e vai cuidar
               dos ajustes. Você não precisa fazer mais nada.
@@ -651,6 +665,14 @@ export default function ApprovalFlow({
             >
               📅 Ver calendário de publicações
             </a>
+            <div className="sealed">
+              <span className="eq sm">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+              Enviado com segurança via {data.agencyName}
+            </div>
           </section>
         )}
       </div>
@@ -808,12 +830,17 @@ export default function ApprovalFlow({
 }
 
 const CSS = `
-.ap-wrap{--ground:#F5F5F0;--surface:#fff;--text:#1C1C1E;--muted:rgba(28,28,30,.58);--line:#E6E6DF;--accent:#009E8E;--accent-h:#00B5A3;--accent-p:#007A6D;--warning:#F59E0B;--warning-ink:#b4730a;--success:#16A34A;--display:var(--font-axiforma),system-ui,sans-serif;font-family:var(--font-sora),system-ui,-apple-system,sans-serif;color:var(--text);display:flex;justify-content:center;min-height:100vh;background:radial-gradient(120% 90% at 50% -10%,rgba(0,158,142,.10),transparent 60%),var(--ground)}
+.ap-wrap{--ground:#F5F5F0;--surface:#fff;--text:#1C1C1E;--muted:rgba(28,28,30,.58);--line:#E6E6DF;--accent:#009E8E;--accent-h:#00B5A3;--accent-p:#007A6D;--warning:#F59E0B;--warning-ink:#92400e;--success:#16A34A;--success-ink:#15803d;--display:var(--font-axiforma),system-ui,sans-serif;font-family:var(--font-sora),system-ui,-apple-system,sans-serif;color:var(--text);display:flex;justify-content:center;min-height:100vh;min-height:100dvh;background:radial-gradient(120% 90% at 50% -10%,rgba(0,158,142,.10),transparent 60%),var(--ground)}
 .ap-wrap *{box-sizing:border-box}
-.ap-wrap .app{width:100%;max-width:440px;background:var(--surface);min-height:100vh;display:flex;flex-direction:column;position:relative;box-shadow:0 0 0 1px var(--line)}
+.ap-wrap .app{width:100%;max-width:440px;background:var(--surface);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;position:relative;box-shadow:0 0 0 1px var(--line)}
 @media(min-width:480px){.ap-wrap{padding:28px 16px;align-items:flex-start}.ap-wrap .app{min-height:auto;border-radius:24px;overflow:hidden}}
 .ap-wrap .eq{display:inline-flex;flex-direction:column;gap:3px}.ap-wrap .eq span{display:block;width:22px;height:4px;border-radius:2px;background:var(--accent)}
 .ap-wrap .eq.sm span{width:15px;height:3px}.ap-wrap .eq.lg span{width:40px;height:7px;gap:6px}
+.ap-wrap .eq.loading span{transform-origin:left center;animation:eqpulse 1.1s ease-in-out infinite}
+.ap-wrap .eq.loading span:nth-child(2){animation-delay:.15s}
+.ap-wrap .eq.loading span:nth-child(3){animation-delay:.3s}
+@keyframes eqpulse{0%,100%{opacity:.35;transform:scaleX(.6)}50%{opacity:1;transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){.ap-wrap .eq.loading span{animation:none}}
 .ap-wrap .topbar{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
 .ap-wrap .brand{display:flex;align-items:center;gap:9px}.ap-wrap .bn{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em}
 .ap-wrap .meta{margin-left:auto;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
@@ -829,7 +856,7 @@ const CSS = `
 .ap-wrap .btn-ghost{background:#fff;color:var(--text);border:1.5px solid var(--line)}
 .ap-wrap .btn-lg{padding:15px 24px;font-size:16px}
 .ap-wrap .field{text-align:left;margin-top:18px}.ap-wrap .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
-.ap-wrap .field input{width:100%;font:inherit;font-size:15px;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--ground)}
+.ap-wrap .field input{width:100%;font:inherit;font-size:16px;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--ground)}
 .ap-wrap .field input:focus{outline:none;border-color:var(--accent);background:#fff}
 .ap-wrap .err{color:#DC2626;font-size:13px;margin-top:12px}
 .ap-wrap .secbtn{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;margin-top:14px;text-decoration:underline}
@@ -881,7 +908,8 @@ const CSS = `
 .ap-wrap .mchip{font-size:12px;font-weight:600;padding:5px 8px 5px 10px;border-radius:999px;background:#fff;border:1.5px solid var(--warning);color:var(--warning-ink);display:inline-flex;align-items:center;gap:6px}
 .ap-wrap .mchip button{border:none;background:none;color:var(--warning-ink);cursor:pointer;font-size:13px;line-height:1;padding:0}
 .ap-wrap .all{text-align:center;padding:14px}.ap-wrap .all button{background:none;border:none;color:var(--accent-p);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline}
-.ap-wrap .actionbar{position:absolute;bottom:0;left:0;right:0;display:flex;gap:11px;padding:14px 18px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.ap-wrap .actionbar{position:absolute;bottom:0;left:0;right:0;display:flex;gap:11px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+.ap-wrap .body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
 .ap-wrap .actionbar .btn{flex:1}
 .ap-wrap .btn-changes{background:#fff;color:var(--warning-ink);border:1.5px solid var(--warning)}
 .ap-wrap .stag{position:absolute;top:-30px;left:18px;font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
@@ -889,15 +917,15 @@ const CSS = `
 .ap-wrap .doneill{width:70px;height:70px;border-radius:50%;background:rgba(22,163,74,.12);display:grid;place-items:center;margin:0 auto 6px}.ap-wrap .doneill.sm{width:54px;height:54px}
 .ap-wrap .doneill .check{width:34px;height:34px;border-radius:50%;background:var(--success);display:grid;place-items:center;color:#fff;font-size:18px}.ap-wrap .doneill.sm .check{width:28px;height:28px;font-size:15px}
 .ap-wrap .summary{display:flex;gap:10px;margin-top:24px;width:100%}
-.ap-wrap .scard{flex:1;border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center}.ap-wrap .scard .n{font-size:26px;font-weight:700}.ap-wrap .scard.ok .n{color:var(--success)}.ap-wrap .scard.ch .n{color:var(--warning)}.ap-wrap .scard small{font-size:11px;color:var(--muted);text-transform:uppercase}
+.ap-wrap .scard{flex:1;border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center}.ap-wrap .scard .n{font-family:var(--display);font-size:26px;font-weight:700}.ap-wrap .scard.ok .n{color:var(--success-ink)}.ap-wrap .scard.ch .n{color:var(--warning-ink)}.ap-wrap .scard small{font-size:11px;color:var(--muted);text-transform:uppercase}
 .ap-wrap .scrim{position:fixed;inset:0;background:rgba(28,28,30,.5);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0}
 @media(min-width:480px){.ap-wrap .scrim{align-items:center;padding:16px}}
-.ap-wrap .modal{width:100%;max-width:440px;background:#fff;border-radius:18px 18px 0 0;padding:22px;max-height:92vh;overflow-y:auto}
+.ap-wrap .modal{width:100%;max-width:440px;background:#fff;border-radius:18px 18px 0 0;padding:22px 22px calc(22px + env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto}
 @media(min-width:480px){.ap-wrap .modal{border-radius:18px}}
 .ap-wrap .seg{display:flex;padding:4px;background:var(--ground);border-radius:10px;margin-bottom:18px}
 .ap-wrap .seg button{flex:1;border:none;background:none;font:inherit;font-size:14px;font-weight:600;padding:9px;border-radius:7px;cursor:pointer;color:var(--muted)}
 .ap-wrap .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}.ap-wrap .seg button.on.approve{color:var(--success)}.ap-wrap .seg button.on.changes{color:var(--warning-ink)}
-.ap-wrap .modal h2{font-size:19px;margin:0 0 4px}.ap-wrap .sub{font-size:13px;color:var(--muted);margin:0 0 16px}
+.ap-wrap .modal h2{font-family:var(--display);font-size:19px;margin:0 0 4px}.ap-wrap .sub{font-size:13px;color:var(--muted);margin:0 0 16px}
 .ap-wrap .ctx{margin:0 0 16px;padding:13px;border:1px solid var(--line);border-radius:10px;background:var(--ground)}
 .ap-wrap .ctxl{font-size:12px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px}
 .ap-wrap .badge{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-p);background:rgba(0,158,142,.12);padding:2px 7px;border-radius:999px}
@@ -923,8 +951,10 @@ const CSS = `
 .ap-wrap .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .ap-wrap .chip{font:inherit;font-size:13px;font-weight:500;padding:8px 13px;border-radius:999px;border:1.5px solid var(--line);background:#fff;cursor:pointer}
 .ap-wrap .chip[aria-pressed=true]{background:rgba(0,158,142,.10);border-color:var(--accent);color:var(--accent-p)}
-.ap-wrap textarea{width:100%;font:inherit;font-size:14px;line-height:1.5;padding:12px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--ground);resize:vertical;min-height:88px}
+.ap-wrap textarea{width:100%;font:inherit;font-size:16px;line-height:1.5;padding:12px 13px;border:1.5px solid var(--line);border-radius:10px;background:var(--ground);resize:vertical;min-height:88px}
 .ap-wrap textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 .ap-wrap .macts{display:flex;gap:11px;margin-top:18px}.ap-wrap .macts .btn{flex:1}
-.ap-wrap .confirm{text-align:center}.ap-wrap .confirm .big{font-size:19px;font-weight:700;margin:6px 0 4px}.ap-wrap .confirm p{font-size:13px;color:var(--muted);margin:0}
+.ap-wrap .confirm{text-align:center}.ap-wrap .confirm .big{font-family:var(--display);font-size:19px;font-weight:700;margin:6px 0 4px}.ap-wrap .confirm p{font-size:13px;color:var(--muted);margin:0}
+.ap-wrap .sealed{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:22px;font-size:11px;letter-spacing:.04em;color:var(--muted)}
+.ap-wrap .sealed .eq.sm span{width:12px;height:2px}
 `;

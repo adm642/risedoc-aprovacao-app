@@ -8,9 +8,11 @@ import PostCardMenu from "./PostCardMenu";
 
 const STATUS: Record<string, { label: string; border: string; badge: string; ink: string }> = {
   draft: { label: "Rascunho", border: "#E6E6DF", badge: "rgba(28,28,30,.06)", ink: "#1C1C1E" },
-  awaiting_review: { label: "Aguardando revisão", border: "#F59E0B", badge: "rgba(245,158,11,.15)", ink: "#b4730a" },
-  change_requested: { label: "Pedido de ajuste", border: "#F59E0B", badge: "rgba(245,158,11,.15)", ink: "#b4730a" },
-  approved: { label: "Aprovado", border: "#16A34A", badge: "rgba(22,163,74,.12)", ink: "#16A34A" },
+  // azul = "bola com o cliente" (esperando o outro lado)
+  awaiting_review: { label: "Aguardando revisão", border: "#2563EB", badge: "rgba(37,99,235,.12)", ink: "#1D4ED8" },
+  // âmbar = "requer minha ação"
+  change_requested: { label: "Pedido de ajuste", border: "#F59E0B", badge: "rgba(245,158,11,.15)", ink: "#92400E" },
+  approved: { label: "Aprovado", border: "#16A34A", badge: "rgba(22,163,74,.12)", ink: "#15803D" },
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
