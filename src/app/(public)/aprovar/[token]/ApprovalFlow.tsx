@@ -1,6 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  Bookmark,
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Frame,
+  Heart,
+  MessageCircle,
+  MoreHorizontal,
+  Pencil,
+  Play,
+  Send,
+  X,
+} from "lucide-react";
 import { LogoMark } from "@/components/Logo";
 import { plural } from "@/lib/plural";
 import type { ApprovalData, ApprovalPost } from "@/lib/public-approval";
@@ -307,6 +324,8 @@ export default function ApprovalFlow({
         {/* WELCOME BACK — reconhecido neste dispositivo */}
         {step === "welcomeback" && saved && (
           <section className="center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/graf-octagons.png" alt="" aria-hidden className="graf" draggable={false} />
             <span className="eq lg">
               <span></span>
               <span></span>
@@ -327,7 +346,14 @@ export default function ApprovalFlow({
               disabled={busy}
               onClick={continueAsSaved}
             >
-              {busy ? "..." : `Sim, sou ${firstName} →`}
+              {busy ? (
+                "..."
+              ) : (
+                <>
+                  Sim, sou {firstName}
+                  <ArrowRight size={18} strokeWidth={1.5} aria-hidden />
+                </>
+              )}
             </button>
             <button className="secbtn" onClick={notMe}>
               Não sou {firstName} / sou outra pessoa
@@ -338,6 +364,8 @@ export default function ApprovalFlow({
         {/* WELCOME */}
         {step === "welcome" && (
           <section className="center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/graf-octagons.png" alt="" aria-hidden className="graf" draggable={false} />
             {data.clientPhoto ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -378,14 +406,16 @@ export default function ApprovalFlow({
               style={{ width: "100%", marginTop: 28 }}
               onClick={() => setStep("identify")}
             >
-              Vamos lá →
+              Vamos lá
+              <ArrowRight size={18} strokeWidth={1.5} aria-hidden />
             </button>
             <a
               href={`/aprovar/${token}/calendario`}
-              className="secbtn"
-              style={{ display: "inline-block", marginTop: 4, textDecoration: "none" }}
+              className="secbtn seclink"
+              style={{ marginTop: 4 }}
             >
-              📅 Ver calendário de publicações
+              <CalendarDays size={15} strokeWidth={1.5} aria-hidden />
+              Ver calendário de publicações
             </a>
           </section>
         )}
@@ -482,7 +512,10 @@ export default function ApprovalFlow({
 
             <div className="body">
               <div className="nettabs">
-                <button className="nettab active">Instagram · {post.format === "reels" ? "Reels" : "Feed"}</button>
+                {/* rede única: badge informativo, não parece clicável */}
+                <span className="netbadge">
+                  Instagram · {post.format === "reels" ? "Reels" : "Feed"}
+                </span>
               </div>
 
               <div className="preview">
@@ -499,7 +532,9 @@ export default function ApprovalFlow({
                     @{handle}
                     {post.kicker && <small>{post.kicker}</small>}
                   </span>
-                  <span className="more">⋯</span>
+                  <span className="more" aria-hidden>
+                    <MoreHorizontal size={18} strokeWidth={1.5} />
+                  </span>
                 </div>
                 <div className={`media ${isReel ? "reel" : ""}`} style={{ background: video || imgs.length > 0 ? "#000" : s?.bg }}>
                   {video ? (
@@ -509,7 +544,12 @@ export default function ApprovalFlow({
                     <img src={imgs[Math.min(slide, imgs.length - 1)].url} alt="" className="img" />
                   ) : (
                     <>
-                      {isReel && <span className="reelbadge">▶ Reels</span>}
+                      {isReel && (
+                        <span className="reelbadge">
+                          <Play size={10} strokeWidth={1.5} fill="currentColor" aria-hidden />
+                          Reels
+                        </span>
+                      )}
                       <div className="kicker">{post.kicker}</div>
                       <h3>{s?.h}</h3>
                       {s?.p && <p>{s.p}</p>}
@@ -517,8 +557,12 @@ export default function ApprovalFlow({
                   )}
                   {isCarousel && (
                     <>
-                      <button className="arrow left" onClick={() => setSlide((slide - 1 + slideCount) % slideCount)}>‹</button>
-                      <button className="arrow right" onClick={() => setSlide((slide + 1) % slideCount)}>›</button>
+                      <button className="arrow left" aria-label="Imagem anterior" onClick={() => setSlide((slide - 1 + slideCount) % slideCount)}>
+                        <ChevronLeft size={20} strokeWidth={1.5} />
+                      </button>
+                      <button className="arrow right" aria-label="Próxima imagem" onClick={() => setSlide((slide + 1) % slideCount)}>
+                        <ChevronRight size={20} strokeWidth={1.5} />
+                      </button>
                       <div className="dots">
                         {Array.from({ length: slideCount }).map((_, i) => (
                           <i key={i} className={i === slide ? "on" : ""}></i>
@@ -528,7 +572,10 @@ export default function ApprovalFlow({
                   )}
                   {isReel && !video && post.duration && (
                     <div className="scrub">
-                      <div className="hint">⏱ Toque na linha do tempo para marcar onde ajustar</div>
+                      <div className="hint">
+                        <Clock size={12} strokeWidth={1.5} aria-hidden />
+                        Toque na linha do tempo para marcar onde ajustar
+                      </div>
                       <div
                         className="track"
                         onClick={(e) => {
@@ -562,18 +609,19 @@ export default function ApprovalFlow({
                         if (v) addMarkSeconds(Math.round(v.currentTime));
                       }}
                     >
-                      ⏱ Marcar este momento para ajuste
+                      <Clock size={16} strokeWidth={1.5} aria-hidden />
+                      Marcar este momento para ajuste
                     </button>
                     <span className="vidhint">
                       Dê play, pause no ponto exato e toque para marcar
                     </span>
                   </div>
                 )}
-                <div className="igactions">
-                  <span>♡</span>
-                  <span>💬</span>
-                  <span>↪</span>
-                  <span className="right">🔖</span>
+                <div className="igactions" aria-hidden>
+                  <span><Heart size={22} strokeWidth={1.5} /></span>
+                  <span><MessageCircle size={22} strokeWidth={1.5} /></span>
+                  <span><Send size={22} strokeWidth={1.5} /></span>
+                  <span className="right"><Bookmark size={22} strokeWidth={1.5} /></span>
                 </div>
                 <div className="cap">
                   <b>@{handle}</b> {post.caption}
@@ -583,7 +631,10 @@ export default function ApprovalFlow({
               <div className="info">
                 {post.suggestedAt && (
                   <div className="line">
-                    <span className="ic">📅</span> Sugerido para{" "}
+                    <span className="ic" aria-hidden>
+                      <CalendarDays size={15} strokeWidth={1.5} />
+                    </span>{" "}
+                    Sugerido para{" "}
                     <b>
                       {new Date(post.suggestedAt).toLocaleString("pt-BR", {
                         day: "2-digit",
@@ -595,7 +646,10 @@ export default function ApprovalFlow({
                   </div>
                 )}
                 <div className="line">
-                  <span className="ic">📐</span> Formato{" "}
+                  <span className="ic" aria-hidden>
+                    <Frame size={15} strokeWidth={1.5} />
+                  </span>{" "}
+                  Formato{" "}
                   <b>
                     {isReel ? "Reels" : isCarousel ? `Carrossel (${post.slides.length} imagens)` : "Imagem única"}
                   </b>
@@ -604,12 +658,18 @@ export default function ApprovalFlow({
 
               {isReel && marks[cur].length > 0 && (
                 <div className="marks">
-                  <div className="mt">⏱ Momentos marcados para ajuste</div>
+                  <div className="mt">
+                    <Clock size={13} strokeWidth={1.5} aria-hidden />
+                    Momentos marcados para ajuste
+                  </div>
                   <div className="mchips">
                     {marks[cur].map((sec, i) => (
                       <span key={i} className="mchip">
-                        ⏱ {fmt(sec)}
-                        <button onClick={() => removeMark(i)}>✕</button>
+                        <Clock size={12} strokeWidth={1.5} aria-hidden />
+                        {fmt(sec)}
+                        <button aria-label={`Remover marcação ${fmt(sec)}`} onClick={() => removeMark(i)}>
+                          <X size={13} strokeWidth={1.5} />
+                        </button>
                       </span>
                     ))}
                   </div>
@@ -624,13 +684,23 @@ export default function ApprovalFlow({
             </div>
 
             <div className="actionbar">
-              {resp[cur] === "approved" && <span className="stag approved">✓ Você aprovou</span>}
-              {resp[cur] === "changes" && <span className="stag changes">✏ Ajuste solicitado</span>}
+              {resp[cur] === "approved" && (
+                <span className="stag approved">
+                  <Check size={13} strokeWidth={2} aria-hidden /> Você aprovou
+                </span>
+              )}
+              {resp[cur] === "changes" && (
+                <span className="stag changes">
+                  <Pencil size={12} strokeWidth={1.5} aria-hidden /> Ajuste solicitado
+                </span>
+              )}
               <button className="btn btn-changes" onClick={() => openModal("changes")}>
-                ✏ Pedir ajuste
+                <Pencil size={16} strokeWidth={1.5} aria-hidden />
+                Pedir ajuste
               </button>
               <button className="btn btn-primary" onClick={() => openModal("approve")}>
-                ✓ Aprovar
+                <Check size={17} strokeWidth={2} aria-hidden />
+                Aprovar
               </button>
             </div>
           </>
@@ -639,8 +709,12 @@ export default function ApprovalFlow({
         {/* DONE */}
         {step === "done" && (
           <section className="center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/graf-octagons.png" alt="" aria-hidden className="graf" draggable={false} />
             <div className="doneill">
-              <span className="check">✓</span>
+              <span className="check">
+                <Check size={19} strokeWidth={2.5} aria-hidden />
+              </span>
             </div>
             <span className="eyebrow">Revisão enviada</span>
             <h1 className="title sm">Prontinho, tudo enviado!</h1>
@@ -660,10 +734,11 @@ export default function ApprovalFlow({
             </div>
             <a
               href={`/aprovar/${token}/calendario`}
-              className="secbtn"
-              style={{ display: "inline-block", marginTop: 18, textDecoration: "none" }}
+              className="secbtn seclink"
+              style={{ marginTop: 18 }}
             >
-              📅 Ver calendário de publicações
+              <CalendarDays size={15} strokeWidth={1.5} aria-hidden />
+              Ver calendário de publicações
             </a>
             <div className="sealed">
               <span className="eq sm">
@@ -683,10 +758,12 @@ export default function ApprovalFlow({
           <div className="modal">
             <div className="seg">
               <button className={modal === "changes" ? "on changes" : ""} onClick={() => setModal("changes")}>
-                ✏ Pedir ajuste
+                <Pencil size={14} strokeWidth={1.5} aria-hidden />
+                Pedir ajuste
               </button>
               <button className={modal === "approve" ? "on approve" : ""} onClick={() => setModal("approve")}>
-                ✓ Aprovar
+                <Check size={15} strokeWidth={2} aria-hidden />
+                Aprovar
               </button>
             </div>
 
@@ -714,15 +791,17 @@ export default function ApprovalFlow({
                       )}
                       <button
                         className="marrow l"
+                        aria-label="Imagem anterior"
                         onClick={() => setMSlide((mSlide - 1 + slideCount) % slideCount)}
                       >
-                        ‹
+                        <ChevronLeft size={20} strokeWidth={1.5} />
                       </button>
                       <button
                         className="marrow r"
+                        aria-label="Próxima imagem"
                         onClick={() => setMSlide((mSlide + 1) % slideCount)}
                       >
-                        ›
+                        <ChevronRight size={20} strokeWidth={1.5} />
                       </button>
                       <span className="mcount">
                         Imagem {mSlide + 1}/{slideCount}
@@ -754,8 +833,11 @@ export default function ApprovalFlow({
                         <div className="mchips">
                           {marks[cur].map((sec, i) => (
                             <span key={i} className="mchip">
-                              ⏱ {fmt(sec)}
-                              <button onClick={() => removeMark(i)}>✕</button>
+                              <Clock size={12} strokeWidth={1.5} aria-hidden />
+                              {fmt(sec)}
+                              <button aria-label={`Remover marcação ${fmt(sec)}`} onClick={() => removeMark(i)}>
+                                <X size={13} strokeWidth={1.5} />
+                              </button>
                             </span>
                           ))}
                         </div>
@@ -807,7 +889,9 @@ export default function ApprovalFlow({
             {modal === "approve" && (
               <div className="confirm">
                 <div className="doneill sm">
-                  <span className="check">✓</span>
+                  <span className="check">
+                    <Check size={15} strokeWidth={2.5} aria-hidden />
+                  </span>
                 </div>
                 <div className="big">Aprovar este post?</div>
                 <p>Ele fica liberado para publicação. Você ainda pode revisar antes de enviar tudo.</p>
@@ -844,7 +928,8 @@ const CSS = `
 .ap-wrap .topbar{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
 .ap-wrap .brand{display:flex;align-items:center;gap:9px}.ap-wrap .bn{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.02em}
 .ap-wrap .meta{margin-left:auto;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
-.ap-wrap .center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px 30px}
+.ap-wrap .center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:40px 30px;position:relative;overflow:hidden}
+.ap-wrap .graf{position:absolute;bottom:-52px;right:-58px;width:230px;opacity:.06;pointer-events:none;user-select:none}
 .ap-wrap .pad{padding:36px 26px 30px;display:flex;flex-direction:column;flex:1}
 .ap-wrap .eyebrow{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--accent)}
 .ap-wrap .title{font-family:var(--display);font-weight:700;font-size:27px;line-height:1.13;letter-spacing:-.02em;margin:14px 0 0}.ap-wrap .title.sm{font-size:23px}
@@ -861,6 +946,8 @@ const CSS = `
 .ap-wrap .err{color:#DC2626;font-size:13px;margin-top:12px}
 .ap-wrap .secbtn{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;margin-top:14px;text-decoration:underline}
 .ap-wrap .secbtn:hover{color:var(--text)}
+.ap-wrap .seclink{display:inline-flex;align-items:center;gap:6px;min-height:40px;text-decoration:none;font-weight:500}
+.ap-wrap .seclink:hover{color:var(--accent-p)}
 .ap-wrap .progress{display:flex;gap:9px;padding:14px 18px;overflow-x:auto;border-bottom:1px solid var(--line)}.ap-wrap .progress::-webkit-scrollbar{display:none}
 .ap-wrap .thumb{flex:0 0 auto;width:46px;height:46px;border-radius:8px;border:2px solid var(--line);cursor:pointer;position:relative;padding:0;background:none}
 .ap-wrap .thumb.current{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,158,142,.25)}
@@ -871,42 +958,44 @@ const CSS = `
 .ap-wrap .thumb[data-state=approved] .dot{background:var(--success)}.ap-wrap .thumb[data-state=changes] .dot{background:var(--warning)}
 .ap-wrap .body{flex:1;overflow-y:auto;padding-bottom:92px}
 .ap-wrap .nettabs{display:flex;gap:6px;padding:14px 18px 4px}
-.ap-wrap .nettab{font-size:12px;font-weight:600;padding:7px 12px;border-radius:999px;border:1.5px solid var(--accent);background:rgba(0,158,142,.07);color:var(--accent-p)}
-.ap-wrap .preview{margin:12px 18px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ap-wrap .netbadge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:6px 12px;border-radius:999px;background:rgba(0,158,142,.08);color:var(--accent-p);cursor:default}
+.ap-wrap .preview{margin:12px 18px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(28,28,30,.05)}
 .ap-wrap .ighead{display:flex;align-items:center;gap:10px;padding:11px 13px}
 .ap-wrap .ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-p));display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px}
 .ap-wrap img.ava{object-fit:cover}
 .ap-wrap .iguser{font-size:13px;font-weight:600;line-height:1.2}.ap-wrap .iguser small{display:block;font-weight:400;color:var(--muted);font-size:11px}
-.ap-wrap .more{margin-left:auto;color:var(--muted)}
+.ap-wrap .more{margin-left:auto;color:var(--muted);display:inline-flex;align-items:center}
 .ap-wrap .media{position:relative;aspect-ratio:4/5;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;color:#fff;overflow:hidden}
 .ap-wrap .media.reel{aspect-ratio:9/16}
 .ap-wrap .media .img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ap-wrap .media .vid{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
 .ap-wrap .vidmark{margin:10px 18px 0;display:flex;flex-direction:column;gap:5px}
-.ap-wrap .vidmark button{background:rgba(245,158,11,.12);border:1.5px solid var(--warning);color:var(--warning-ink);font:inherit;font-size:14px;font-weight:600;padding:12px;border-radius:10px;cursor:pointer}
+.ap-wrap .vidmark button{background:rgba(245,158,11,.12);border:1.5px solid var(--warning);color:var(--warning-ink);font:inherit;font-size:14px;font-weight:600;padding:12px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px}
 .ap-wrap .vidhint{font-size:11px;color:var(--muted);text-align:center}
 .ap-wrap .miniimg{width:100%;height:100%;object-fit:cover}
 .ap-wrap .media .kicker{font-size:11px;text-transform:uppercase;letter-spacing:.12em;opacity:.9;margin-bottom:auto}
 .ap-wrap .media h3{font-size:24px;line-height:1.1;margin:0;text-shadow:0 2px 14px rgba(0,0,0,.35)}
 .ap-wrap .media p{font-size:13px;margin:8px 0 0;opacity:.92;text-shadow:0 1px 8px rgba(0,0,0,.4)}
-.ap-wrap .reelbadge{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);font-size:11px;padding:4px 9px;border-radius:999px;z-index:4}
-.ap-wrap .arrow{position:absolute;top:45%;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.85);border:none;cursor:pointer;font-size:15px;color:var(--text);z-index:4}.ap-wrap .arrow.left{left:10px}.ap-wrap .arrow.right{right:10px}
+.ap-wrap .reelbadge{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.5);font-size:11px;padding:4px 9px;border-radius:999px;z-index:4;display:inline-flex;align-items:center;gap:4px}
+.ap-wrap .arrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.92);border:none;cursor:pointer;color:var(--text);z-index:4;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.14)}.ap-wrap .arrow.left{left:8px}.ap-wrap .arrow.right{right:8px}
 .ap-wrap .dots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3}.ap-wrap .dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5)}.ap-wrap .dots i.on{background:#fff}
 .ap-wrap .scrub{position:absolute;left:0;right:0;bottom:0;padding:10px 14px 14px;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);z-index:5}
-.ap-wrap .scrub .hint{font-size:11px;opacity:.92;margin-bottom:8px;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.ap-wrap .scrub .hint{font-size:11px;opacity:.92;margin-bottom:8px;text-shadow:0 1px 6px rgba(0,0,0,.5);display:flex;align-items:center;gap:5px}
+.ap-wrap .scrub .hint svg{flex:none}
 .ap-wrap .track{position:relative;height:22px;display:flex;align-items:center;cursor:pointer}
 .ap-wrap .track .bar{position:absolute;left:0;right:0;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
 .ap-wrap .pin{position:absolute;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:var(--warning);border:2px solid #fff;cursor:pointer;z-index:6}
 .ap-wrap .pin::after{content:attr(data-t);position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:var(--warning-ink);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;white-space:nowrap}
 .ap-wrap .dur{font-size:11px;margin-top:4px;text-align:right;opacity:.85}
-.ap-wrap .igactions{display:flex;gap:16px;padding:10px 13px 4px;font-size:18px}.ap-wrap .igactions .right{margin-left:auto}
+.ap-wrap .igactions{display:flex;align-items:center;gap:16px;padding:10px 13px 4px;color:var(--text)}.ap-wrap .igactions span{display:inline-flex;align-items:center}.ap-wrap .igactions .right{margin-left:auto}
 .ap-wrap .cap{padding:4px 13px 14px;font-size:13px;line-height:1.55;white-space:pre-line}.ap-wrap .cap b{font-weight:600}
-.ap-wrap .info{margin:14px 18px 0;display:grid;gap:9px}.ap-wrap .line{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted)}.ap-wrap .line b{color:var(--text);font-weight:600}.ap-wrap .ic{color:var(--accent)}
+.ap-wrap .info{margin:14px 18px 0;display:grid;gap:9px}.ap-wrap .line{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted)}.ap-wrap .line b{color:var(--text);font-weight:600}.ap-wrap .ic{color:var(--accent);display:inline-flex;align-items:center;flex:none}
 .ap-wrap .marks{margin:12px 18px 0;padding:11px 13px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);border-radius:10px}
-.ap-wrap .mt{font-size:12px;font-weight:600;color:var(--warning-ink)}
+.ap-wrap .mt{font-size:12px;font-weight:600;color:var(--warning-ink);display:flex;align-items:center;gap:6px}
 .ap-wrap .mchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
-.ap-wrap .mchip{font-size:12px;font-weight:600;padding:5px 8px 5px 10px;border-radius:999px;background:#fff;border:1.5px solid var(--warning);color:var(--warning-ink);display:inline-flex;align-items:center;gap:6px}
-.ap-wrap .mchip button{border:none;background:none;color:var(--warning-ink);cursor:pointer;font-size:13px;line-height:1;padding:0}
+.ap-wrap .mchip{font-size:12px;font-weight:600;padding:5px 6px 5px 10px;border-radius:999px;background:#fff;border:1.5px solid var(--warning);color:var(--warning-ink);display:inline-flex;align-items:center;gap:5px}
+.ap-wrap .mchip button{border:none;background:none;color:var(--warning-ink);cursor:pointer;line-height:1;padding:0;width:22px;height:22px;margin:-3px 0;display:grid;place-items:center;border-radius:50%}
+.ap-wrap .mchip button:hover{background:rgba(245,158,11,.14)}
 .ap-wrap .all{text-align:center;padding:14px}.ap-wrap .all button{background:none;border:none;color:var(--accent-p);font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline}
 .ap-wrap .actionbar{position:absolute;bottom:0;left:0;right:0;display:flex;gap:11px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
 .ap-wrap .body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
@@ -923,7 +1012,7 @@ const CSS = `
 .ap-wrap .modal{width:100%;max-width:440px;background:#fff;border-radius:18px 18px 0 0;padding:22px 22px calc(22px + env(safe-area-inset-bottom));max-height:92dvh;overflow-y:auto}
 @media(min-width:480px){.ap-wrap .modal{border-radius:18px}}
 .ap-wrap .seg{display:flex;padding:4px;background:var(--ground);border-radius:10px;margin-bottom:18px}
-.ap-wrap .seg button{flex:1;border:none;background:none;font:inherit;font-size:14px;font-weight:600;padding:9px;border-radius:7px;cursor:pointer;color:var(--muted)}
+.ap-wrap .seg button{flex:1;border:none;background:none;font:inherit;font-size:14px;font-weight:600;padding:9px;border-radius:7px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px}
 .ap-wrap .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}.ap-wrap .seg button.on.approve{color:var(--success)}.ap-wrap .seg button.on.changes{color:var(--warning-ink)}
 .ap-wrap .modal h2{font-family:var(--display);font-size:19px;margin:0 0 4px}.ap-wrap .sub{font-size:13px;color:var(--muted);margin:0 0 16px}
 .ap-wrap .ctx{margin:0 0 16px;padding:13px;border:1px solid var(--line);border-radius:10px;background:var(--ground)}
@@ -941,7 +1030,7 @@ const CSS = `
 .ap-wrap .mcar{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/5;margin-bottom:10px;display:grid;place-items:center}
 .ap-wrap .mcar img{width:100%;height:100%;object-fit:cover}
 .ap-wrap .mcar-grad{width:100%;height:100%;display:grid;place-items:center;text-align:center;padding:18px;color:#fff;font-family:var(--display);font-weight:700;font-size:16px}
-.ap-wrap .mcar .marrow{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.85);border:none;cursor:pointer;font-size:15px;color:var(--text)}
+.ap-wrap .mcar .marrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.92);border:none;cursor:pointer;color:var(--text);display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.14)}
 .ap-wrap .mcar .marrow.l{left:8px}.ap-wrap .mcar .marrow.r{right:8px}
 .ap-wrap .mcar .mcount{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px}
 .ap-wrap .mdots{display:flex;gap:5px;justify-content:center;margin-top:8px}

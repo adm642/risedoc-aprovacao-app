@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Settings2 } from "lucide-react";
+import Button from "@/components/ui/Button";
 import { uploadMedia } from "@/lib/upload";
 import { publicMediaUrl } from "@/lib/media";
 import { updateProjectSettings, deleteProject } from "./actions";
@@ -86,13 +88,10 @@ export default function ClientSettings({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition-colors hover:border-brand-500/40"
-      >
+      <Button variant="ghost" onClick={() => setOpen(true)}>
+        <Settings2 size={16} strokeWidth={1.5} aria-hidden />
         Editar cliente
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -159,22 +158,12 @@ export default function ClientSettings({
             {err && <p className="mb-3 text-sm text-status-danger">{err}</p>}
 
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                disabled={!!busy}
-                className="rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-5 py-2.5 text-sm font-semibold text-charcoal-900"
-              >
+              <Button variant="ghost" onClick={() => setOpen(false)} disabled={!!busy}>
                 Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={save}
-                disabled={!!busy}
-                className="flex-1 rounded-[10px] bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400 disabled:opacity-60"
-              >
+              </Button>
+              <Button onClick={save} disabled={!!busy} className="flex-1">
                 {busy || "Salvar"}
-              </button>
+              </Button>
             </div>
 
             {/* Zona de perigo — excluir cliente */}

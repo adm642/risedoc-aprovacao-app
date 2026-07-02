@@ -1,18 +1,32 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  LayoutGrid,
+  PenLine,
+  Play,
+  Plus,
+} from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
+import { statusMeta, type StatusTone } from "@/lib/status-meta";
+import StatusBadge from "@/components/ui/StatusBadge";
+import Button from "@/components/ui/Button";
 import GroupsList, { type GroupItem } from "./GroupsList";
 import ClientSettings from "./ClientSettings";
 import PostCardMenu from "./PostCardMenu";
 
-const STATUS: Record<string, { label: string; border: string; badge: string; ink: string }> = {
-  draft: { label: "Rascunho", border: "#E6E6DF", badge: "rgba(28,28,30,.06)", ink: "#1C1C1E" },
-  // azul = "bola com o cliente" (esperando o outro lado)
-  awaiting_review: { label: "Aguardando revisão", border: "#2563EB", badge: "rgba(37,99,235,.12)", ink: "#1D4ED8" },
-  // âmbar = "requer minha ação"
-  change_requested: { label: "Pedido de ajuste", border: "#F59E0B", badge: "rgba(245,158,11,.15)", ink: "#92400E" },
-  approved: { label: "Aprovado", border: "#16A34A", badge: "rgba(22,163,74,.12)", ink: "#15803D" },
+/* Borda esquerda do card por tom do status (info = bola com o cliente,
+   warning = requer minha ação). Labels/tons vêm de status-meta. */
+const TONE_BORDER: Record<StatusTone, string> = {
+  neutral: "border-l-neutral-200",
+  info: "border-l-status-info",
+  warning: "border-l-status-warning",
+  success: "border-l-status-success",
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,10 +100,14 @@ export default async function ProjetoPage({
 
   return (
     <main className="px-8 py-7">
-      <Link href="/dashboard" className="text-sm font-semibold text-brand-900 hover:underline">
-        ‹ Voltar para Dashboard
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-brand-900 hover:underline"
+      >
+        <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
+        Voltar para Dashboard
       </Link>
-      <div className="mt-3 mb-6 flex items-center gap-4">
+      <div className="mt-4 mb-6 flex items-center gap-4">
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {(project as any).photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -105,7 +123,10 @@ export default async function ProjetoPage({
           </span>
         )}
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-charcoal-900">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-900">
+            Cliente
+          </div>
+          <h1 className="mt-0.5 font-display text-[28px] font-bold leading-tight tracking-tight text-charcoal-900">
             {project.name}
           </h1>
           <p className="text-sm text-charcoal-900/60">Meus posts</p>
@@ -121,18 +142,14 @@ export default async function ProjetoPage({
             instagramHandle={(project as any).instagram_handle ?? null}
             name={project.name}
           />
-          <Link
-            href={`/projetos/${id}/calendario`}
-            className="rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-4 py-2.5 text-sm font-semibold text-charcoal-900 transition-colors hover:border-brand-500/40"
-          >
-            📅 Calendário
-          </Link>
-          <Link
-            href={`/projetos/${id}/novo`}
-            className="rounded-[10px] bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
-          >
-            + Novo post
-          </Link>
+          <Button href={`/projetos/${id}/calendario`} variant="ghost">
+            <CalendarDays size={16} strokeWidth={1.5} aria-hidden />
+            Calendário
+          </Button>
+          <Button href={`/projetos/${id}/novo`}>
+            <Plus size={16} strokeWidth={1.5} aria-hidden />
+            Novo post
+          </Button>
         </div>
       </div>
 
@@ -142,7 +159,7 @@ export default async function ProjetoPage({
           const t = one(p.post_targets);
           const demo = t?.settings?.demo ?? {};
           const slide = demo.slides?.[0] ?? { h: p.internal_title, bg: "#009E8E" };
-          const st = STATUS[p.status] ?? STATUS.draft;
+          const tone = statusMeta(p.status).tone;
           const isReel = t?.format === "reels";
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const media = ((p.post_media ?? []) as any[])
@@ -154,8 +171,7 @@ export default async function ProjetoPage({
               <PostCardMenu postId={p.id} projectId={id} title={p.internal_title} />
             <Link
               href={`/posts/${p.id}`}
-              className="block overflow-hidden rounded-[10px] border border-neutral-100 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md"
-              style={{ borderLeft: `4px solid ${st.border}` }}
+              className={`block overflow-hidden rounded-[10px] border border-neutral-100 border-l-4 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md ${TONE_BORDER[tone]}`}
             >
               <div
                 className="relative flex flex-col justify-end overflow-hidden p-3.5 text-white"
@@ -168,8 +184,17 @@ export default async function ProjetoPage({
                 {first && first.type === "video" && (
                   <video src={publicMediaUrl(first.storage_key)} muted playsInline className="absolute inset-0 h-full w-full object-cover" />
                 )}
-                <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
-                  {isReel ? "▶ Reels" : media.length > 1 || demo.slides?.length > 1 ? "Carrossel" : "Feed"}
+                <span className="absolute left-2.5 top-2.5 z-10 inline-flex items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[10px]">
+                  {isReel ? (
+                    <>
+                      <Play size={9} strokeWidth={1.5} fill="currentColor" aria-hidden />
+                      Reels
+                    </>
+                  ) : media.length > 1 || demo.slides?.length > 1 ? (
+                    "Carrossel"
+                  ) : (
+                    "Feed"
+                  )}
                 </span>
                 {!first && (
                   <>
@@ -181,12 +206,7 @@ export default async function ProjetoPage({
                 )}
               </div>
               <div className="p-3">
-                <span
-                  className="inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                  style={{ background: st.badge, color: st.ink }}
-                >
-                  {st.label}
-                </span>
+                <StatusBadge status={p.status} />
               </div>
             </Link>
             </div>
@@ -194,7 +214,23 @@ export default async function ProjetoPage({
         })}
       </div>
       {(posts ?? []).length === 0 && (
-        <p className="text-sm text-charcoal-900/50">Nenhum post neste projeto ainda.</p>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-200 bg-white/60 py-12 text-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/graf-octagons.png"
+            alt=""
+            aria-hidden
+            className="h-12 w-auto select-none opacity-20"
+            draggable={false}
+          />
+          <p className="text-sm text-charcoal-900/55">
+            Nenhum post neste projeto ainda.
+          </p>
+          <Button href={`/projetos/${id}/novo`} variant="secondary" size="sm">
+            <Plus size={14} strokeWidth={1.5} aria-hidden />
+            Criar o primeiro post
+          </Button>
+        </div>
       )}
 
       <h2 className="mb-3 mt-10 font-display text-base font-semibold text-charcoal-900">
@@ -231,17 +267,25 @@ export default async function ProjetoPage({
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
                     isChange
-                      ? "bg-status-warning/15 text-[#b4730a]"
-                      : "bg-status-success/15 text-status-success"
+                      ? "bg-status-warning/15 text-status-warning-ink"
+                      : "bg-status-success/15 text-status-success-ink"
                   }`}
                 >
-                  {isChange ? "✏ Pedido de ajuste" : "✓ Aprovado"}
+                  {isChange ? (
+                    <PenLine size={12} strokeWidth={1.5} aria-hidden />
+                  ) : (
+                    <Check size={12} strokeWidth={2.25} aria-hidden />
+                  )}
+                  {isChange ? "Pedido de ajuste" : "Aprovado"}
                 </span>
                 <span className="font-semibold text-charcoal-900">
                   {post?.internal_title ?? "Post"}
                 </span>
                 {f.resolved_at && (
-                  <span className="text-xs font-semibold text-status-success">· resolvido ✓</span>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-status-success-ink">
+                    · resolvido
+                    <Check size={12} strokeWidth={2.25} aria-hidden />
+                  </span>
                 )}
                 <span className="ml-auto text-xs text-charcoal-900/45">{reviewer?.name}</span>
               </div>
@@ -250,17 +294,19 @@ export default async function ProjetoPage({
                   {f.slide_indexes?.map((i: number) => (
                     <span
                       key={`s${i}`}
-                      className="rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-brand-900"
+                      className="inline-flex items-center gap-1 rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-brand-900"
                     >
-                      ▦ Card {i + 1}
+                      <LayoutGrid size={11} strokeWidth={1.5} aria-hidden />
+                      Card {i + 1}
                     </span>
                   ))}
                   {f.video_timestamps?.map((sx: number) => (
                     <span
                       key={`t${sx}`}
-                      className="rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-[#b4730a]"
+                      className="inline-flex items-center gap-1 rounded-md border border-neutral-100 bg-neutral-50 px-2 py-0.5 text-xs font-semibold text-status-warning-ink"
                     >
-                      ⏱ {fmt(sx)}
+                      <Clock size={11} strokeWidth={1.5} aria-hidden />
+                      {fmt(sx)}
                     </span>
                   ))}
                 </div>
@@ -276,12 +322,16 @@ export default async function ProjetoPage({
           {fpage > 1 ? (
             <Link
               href={`/projetos/${id}?fpage=${fpage - 1}`}
-              className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand-900 hover:bg-neutral-50"
+              className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-semibold text-brand-900 hover:bg-neutral-50"
             >
-              ‹ Anterior
+              <ChevronLeft size={15} strokeWidth={1.5} aria-hidden />
+              Anterior
             </Link>
           ) : (
-            <span className="px-3 py-1.5 text-sm text-charcoal-900/30">‹ Anterior</span>
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-charcoal-900/30">
+              <ChevronLeft size={15} strokeWidth={1.5} aria-hidden />
+              Anterior
+            </span>
           )}
           <span className="text-sm text-charcoal-900/55">
             Página {fpage} de {totalPages}
@@ -289,12 +339,16 @@ export default async function ProjetoPage({
           {fpage < totalPages ? (
             <Link
               href={`/projetos/${id}?fpage=${fpage + 1}`}
-              className="rounded-md px-3 py-1.5 text-sm font-semibold text-brand-900 hover:bg-neutral-50"
+              className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-semibold text-brand-900 hover:bg-neutral-50"
             >
-              Próxima ›
+              Próxima
+              <ChevronRight size={15} strokeWidth={1.5} aria-hidden />
             </Link>
           ) : (
-            <span className="px-3 py-1.5 text-sm text-charcoal-900/30">Próxima ›</span>
+            <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-charcoal-900/30">
+              Próxima
+              <ChevronRight size={15} strokeWidth={1.5} aria-hidden />
+            </span>
           )}
         </div>
       )}

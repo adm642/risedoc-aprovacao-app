@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { deletePost } from "./actions";
 
 export default function PostCardMenu({
@@ -57,7 +58,7 @@ export default function PostCardMenu({
         }}
         className="grid h-7 w-7 place-items-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-colors hover:bg-black/65"
       >
-        <span className="-mt-1.5 text-lg leading-none">⋯</span>
+        <MoreHorizontal size={16} strokeWidth={1.5} aria-hidden />
       </button>
 
       {open && (
@@ -76,7 +77,8 @@ export default function PostCardMenu({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium hover:bg-neutral-50"
               >
-                ✏️ Editar
+                <Pencil size={14} strokeWidth={1.5} aria-hidden />
+                Editar
               </button>
               <button
                 type="button"
@@ -87,7 +89,8 @@ export default function PostCardMenu({
                 }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-status-danger hover:bg-status-danger/5"
               >
-                🗑️ Excluir
+                <Trash2 size={14} strokeWidth={1.5} aria-hidden />
+                Excluir
               </button>
             </>
           ) : (

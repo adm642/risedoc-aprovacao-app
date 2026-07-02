@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { STATUS_META, statusMeta, type StatusTone } from "@/lib/status-meta";
 
 export type CalendarPost = {
   id: string;
@@ -11,11 +13,12 @@ export type CalendarPost = {
   thumb?: string | null;
 };
 
-const STATUS: Record<string, { dot: string; label: string }> = {
-  draft: { dot: "#9a9a96", label: "Rascunho" },
-  awaiting_review: { dot: "#2563EB", label: "Aguardando" },
-  change_requested: { dot: "#F59E0B", label: "Ajuste" },
-  approved: { dot: "#16A34A", label: "Aprovado" },
+/* Cores dos pontos por tom semântico (tokens de globals.css) */
+const TONE_DOT: Record<StatusTone, string> = {
+  neutral: "#9a9a96",
+  info: "#2563eb",
+  warning: "#f59e0b",
+  success: "#16a34a",
 };
 
 const MONTHS = [
@@ -83,9 +86,9 @@ export default function PostCalendar({
         <button
           onClick={() => shift(-1)}
           aria-label="Mês anterior"
-          className="grid h-9 w-9 place-items-center rounded-full border border-neutral-100 bg-white text-charcoal-900 hover:border-brand-500"
+          className="grid h-10 w-10 place-items-center rounded-full border border-neutral-100 bg-white text-charcoal-900 hover:border-brand-500"
         >
-          ‹
+          <ChevronLeft size={18} strokeWidth={1.5} />
         </button>
         <div className="min-w-[180px] text-center font-display text-lg font-bold text-charcoal-900">
           {MONTHS[view.m]} {view.y}
@@ -93,9 +96,9 @@ export default function PostCalendar({
         <button
           onClick={() => shift(1)}
           aria-label="Próximo mês"
-          className="grid h-9 w-9 place-items-center rounded-full border border-neutral-100 bg-white text-charcoal-900 hover:border-brand-500"
+          className="grid h-10 w-10 place-items-center rounded-full border border-neutral-100 bg-white text-charcoal-900 hover:border-brand-500"
         >
-          ›
+          <ChevronRight size={18} strokeWidth={1.5} />
         </button>
         <button
           onClick={() => setView({ y: now.getFullYear(), m: now.getMonth() })}
@@ -131,7 +134,7 @@ export default function PostCalendar({
               </div>
               <div className="flex flex-col gap-1">
                 {dayPosts.map((p) => {
-                  const st = STATUS[p.status] ?? STATUS.draft;
+                  const st = statusMeta(p.status);
                   const inner = (
                     <div className="flex items-center gap-1.5 rounded-md bg-neutral-50 px-1.5 py-1">
                       {p.thumb ? (
@@ -144,7 +147,7 @@ export default function PostCalendar({
                       ) : (
                         <span
                           className="h-2 w-2 shrink-0 rounded-full"
-                          style={{ background: st.dot }}
+                          style={{ background: TONE_DOT[st.tone] }}
                         />
                       )}
                       <span className="truncate text-[11px] font-medium text-charcoal-900/80">
@@ -167,9 +170,12 @@ export default function PostCalendar({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3 text-[11px] text-charcoal-900/55">
-        {Object.entries(STATUS).map(([k, v]) => (
+        {Object.entries(STATUS_META).map(([k, v]) => (
           <span key={k} className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: v.dot }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: TONE_DOT[v.tone] }}
+            />
             {v.label}
           </span>
         ))}

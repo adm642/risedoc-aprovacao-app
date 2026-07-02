@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { getClientCalendar } from "@/lib/public-approval";
 import PostCalendar from "@/components/PostCalendar";
 
@@ -59,9 +60,10 @@ export default async function CalendarioPublicoPage({
       <div className="mt-8">
         <Link
           href={`/aprovar/${token}`}
-          className="text-sm font-semibold text-brand-900 hover:underline"
+          className="inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-brand-900 hover:underline"
         >
-          ‹ Voltar para a aprovação
+          <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
+          Voltar para a aprovação
         </Link>
       </div>
     </main>

@@ -1,7 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  Check,
+  ChevronLeft,
+  Clock,
+  LayoutGrid,
+  Link2,
+  TriangleAlert,
+} from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
+import StatusBadge from "@/components/ui/StatusBadge";
 import ResolvePanel from "./ResolvePanel";
 import FeedbackResolveToggle from "./FeedbackResolveToggle";
 import MediaCarousel from "./MediaCarousel";
@@ -9,6 +18,16 @@ import EditPostPanel from "./EditPostPanel";
 
 function fmt(sec: number) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+}
+
+/* Cor do ponto da timeline por tipo de evento:
+   aprovação/resolução = verde, ajuste = âmbar, ClickUp = azul, demais = teal. */
+function eventDotClass(eventType: string) {
+  const t = String(eventType);
+  if (t === "approved" || t === "feedback_resolved") return "bg-status-success";
+  if (t === "change_requested") return "bg-status-warning";
+  if (t.startsWith("clickup_")) return "bg-status-info";
+  return "bg-brand-500";
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function one(v: any) {
@@ -29,7 +48,7 @@ export default async function PostDetailPage({
   const { data: post } = await sb
     .from("posts")
     .select(
-      "id, internal_title, status, suggested_publish_at, clickup_task_id, project_id, projects ( name, instagram_handle ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
+      "id, internal_title, status, suggested_publish_at, clickup_task_id, project_id, projects ( name, instagram_handle, photo_url ), post_targets ( id, network, format, caption, settings ), post_media ( type, storage_key, position, is_current )",
     )
     .eq("id", postId)
     .maybeSingle();
@@ -78,9 +97,10 @@ export default async function PostDetailPage({
     <main className="px-8 py-7">
       <Link
         href={`/projetos/${post.project_id}`}
-        className="text-sm font-semibold text-brand-900 hover:underline"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-brand-900 hover:underline"
       >
-        ‹ Voltar para {project?.name ?? "o projeto"}
+        <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
+        Voltar para {project?.name ?? "o projeto"}
       </Link>
 
       <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -113,22 +133,27 @@ export default async function PostDetailPage({
           <div className="mb-1 text-xs uppercase tracking-wide text-charcoal-900/50">
             Detalhes do post
           </div>
-          <h1 className="font-display text-xl font-bold text-charcoal-900">
-            {post.internal_title}
-          </h1>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="font-display text-xl font-bold text-charcoal-900">
+              {post.internal_title}
+            </h1>
+            <StatusBadge status={post.status} />
+          </div>
 
           {post.clickup_task_id && (
             <div className="mt-2 text-xs">
               {lastClickup?.event_type === "clickup_subtask_created" ? (
-                <span className="font-semibold text-status-success">
-                  ✓ Subtarefa criada no ClickUp
+                <span className="inline-flex items-center gap-1 font-semibold text-status-success-ink">
+                  <Check size={13} strokeWidth={2.5} aria-hidden /> Subtarefa criada no ClickUp
                 </span>
               ) : lastClickup?.event_type === "clickup_subtask_failed" ? (
-                <span className="font-semibold text-[#b4730a]">
-                  ⚠ ClickUp não criou a subtarefa — {lastClickup.description}
+                <span className="inline-flex items-center gap-1 font-semibold text-status-warning-ink">
+                  <TriangleAlert size={13} strokeWidth={1.5} aria-hidden /> ClickUp não criou a subtarefa — {lastClickup.description}
                 </span>
               ) : (
-                <span className="text-charcoal-900/55">🔗 Vinculado a um card do ClickUp</span>
+                <span className="inline-flex items-center gap-1 text-charcoal-900/55">
+                  <Link2 size={13} strokeWidth={1.5} aria-hidden /> Vinculado a um card do ClickUp
+                </span>
               )}
             </div>
           )}
@@ -177,11 +202,11 @@ export default async function PostDetailPage({
                     {reviewer?.name}
                   </span>
                   <span
-                    className="ml-auto rounded-full px-2.5 py-1 text-xs font-semibold"
-                    style={{
-                      background: isChange ? "rgba(245,158,11,.15)" : "rgba(22,163,74,.15)",
-                      color: isChange ? "#b4730a" : "#16A34A",
-                    }}
+                    className={`ml-auto rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      isChange
+                        ? "bg-status-warning/15 text-status-warning-ink"
+                        : "bg-status-success/15 text-status-success-ink"
+                    }`}
                   >
                     {isChange ? "Pedido de ajuste" : "Aprovado"}
                   </span>
@@ -192,7 +217,7 @@ export default async function PostDetailPage({
                     {f.categories.map((c: string) => (
                       <span
                         key={c}
-                        className="rounded-full border border-status-warning bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#b4730a]"
+                        className="rounded-full border border-status-warning bg-white px-2.5 py-0.5 text-[11px] font-semibold text-status-warning-ink"
                       >
                         {c}
                       </span>
@@ -209,17 +234,17 @@ export default async function PostDetailPage({
                       {f.slide_indexes?.map((i: number) => (
                         <span
                           key={`s${i}`}
-                          className="rounded-md border border-neutral-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-900"
+                          className="inline-flex items-center gap-1 rounded-md border border-neutral-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-900"
                         >
-                          ▦ Card {i + 1}
+                          <LayoutGrid size={12} strokeWidth={1.5} aria-hidden /> Card {i + 1}
                         </span>
                       ))}
                       {f.video_timestamps?.map((s: number) => (
                         <span
                           key={`t${s}`}
-                          className="rounded-md border border-neutral-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#b4730a]"
+                          className="inline-flex items-center gap-1 rounded-md border border-neutral-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-status-warning-ink"
                         >
-                          ⏱ {fmt(s)}
+                          <Clock size={12} strokeWidth={1.5} aria-hidden /> {fmt(s)}
                         </span>
                       ))}
                     </div>
@@ -260,10 +285,19 @@ export default async function PostDetailPage({
           </h2>
           <div className="flex flex-col gap-0">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {((events ?? []) as any[]).map((e, i, arr) => (
+            {((events ?? []) as any[]).map((e, i, arr) => {
+              const et = String(e.event_type);
+              const dot = /approv/.test(et)
+                ? "bg-status-success"
+                : /change|feedback|ajuste/.test(et)
+                  ? "bg-status-warning"
+                  : et.startsWith("clickup")
+                    ? "bg-status-info"
+                    : "bg-brand-500";
+              return (
               <div key={e.id} className="flex gap-3">
                 <div className="flex flex-col items-center">
-                  <div className="mt-1.5 h-2.5 w-2.5 rounded-full bg-brand-500" />
+                  <div className={`mt-1.5 h-2.5 w-2.5 rounded-full ${dot}`} />
                   {i < arr.length - 1 && <div className="w-0.5 flex-1 bg-neutral-100" />}
                 </div>
                 <div className="pb-4">
@@ -275,7 +309,8 @@ export default async function PostDetailPage({
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
             {(events ?? []).length === 0 && (
               <p className="text-sm text-charcoal-900/50">Sem eventos registrados.</p>
             )}

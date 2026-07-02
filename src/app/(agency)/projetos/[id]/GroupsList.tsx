@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Link2, Pencil, Plus, Trash2 } from "lucide-react";
+import Button from "@/components/ui/Button";
 import { createGroup, renameGroup, deleteGroup } from "./actions";
 
 export type GroupItem = {
@@ -101,29 +103,27 @@ export default function GroupsList({
             placeholder="Nome do lote (ex.: AGOSTO)"
             className="rounded-[10px] border-[1.5px] border-neutral-100 bg-neutral-50 px-3.5 py-2 text-sm outline-none focus:border-brand-500 focus:bg-white"
           />
-          <button
-            onClick={doCreate}
-            disabled={busy || !newName.trim()}
-            className="rounded-[10px] bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60"
-          >
+          <Button onClick={doCreate} disabled={busy || !newName.trim()} size="sm">
             {busy ? "..." : "Criar lote"}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setCreating(false);
               setNewName("");
             }}
-            className="rounded-[10px] border-[1.5px] border-neutral-100 bg-white px-4 py-2 text-sm font-semibold text-charcoal-900"
           >
             Cancelar
-          </button>
+          </Button>
         </div>
       ) : (
         <button
           onClick={() => setCreating(true)}
-          className="rounded-[10px] border-[1.5px] border-dashed border-neutral-100 bg-white px-4 py-2 text-sm font-semibold text-brand-900 hover:border-brand-500"
+          className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-brand-500/40 bg-white px-4 py-2 text-sm font-semibold text-brand-900 transition-colors hover:border-brand-500 hover:bg-brand-500/5"
         >
-          + Novo lote
+          <Plus size={15} strokeWidth={1.5} aria-hidden />
+          Novo lote
         </button>
       )}
     </div>
@@ -184,7 +184,7 @@ export default function GroupsList({
                     title="Renomear"
                     className="grid h-7 w-7 place-items-center rounded-md text-charcoal-900/40 hover:bg-neutral-50 hover:text-charcoal-900"
                   >
-                    ✏️
+                    <Pencil size={14} strokeWidth={1.5} aria-hidden />
                   </button>
                   <button
                     onClick={() => setConfirmId(g.id)}
@@ -192,7 +192,7 @@ export default function GroupsList({
                     title="Excluir"
                     className="grid h-7 w-7 place-items-center rounded-md text-charcoal-900/40 hover:bg-status-danger/10 hover:text-status-danger"
                   >
-                    🗑️
+                    <Trash2 size={14} strokeWidth={1.5} aria-hidden />
                   </button>
                 </div>
               </>
@@ -227,32 +227,39 @@ export default function GroupsList({
 
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {g.awaiting > 0 && (
-              <span className="rounded-full bg-status-warning/15 px-2.5 py-1 font-semibold text-[#b4730a]">
+              <span className="rounded-full bg-status-info/10 px-2.5 py-1 font-semibold text-status-info-ink">
                 {g.awaiting} aguardando
               </span>
             )}
             {g.changes > 0 && (
-              <span className="rounded-full bg-status-warning/15 px-2.5 py-1 font-semibold text-[#b4730a]">
+              <span className="rounded-full bg-status-warning/15 px-2.5 py-1 font-semibold text-status-warning-ink">
                 {g.changes} ajuste(s)
               </span>
             )}
             {g.approved > 0 && (
-              <span className="rounded-full bg-status-success/15 px-2.5 py-1 font-semibold text-status-success">
+              <span className="rounded-full bg-status-success/10 px-2.5 py-1 font-semibold text-status-success-ink">
                 {g.approved} aprovado(s)
               </span>
             )}
           </div>
 
           <div className="mt-3 flex items-center gap-2 rounded-[10px] bg-neutral-50 px-3 py-2">
-            <span className="text-charcoal-900/40">🔗</span>
+            <Link2 size={14} strokeWidth={1.5} aria-hidden className="shrink-0 text-charcoal-900/40" />
             <code className="flex-1 truncate text-xs text-charcoal-900/70">
               /aprovar/{g.token}
             </code>
             <button
               onClick={() => copy(g.token)}
-              className="rounded-md border border-neutral-100 bg-white px-2.5 py-1 text-xs font-semibold text-brand-900 hover:border-brand-500"
+              className="inline-flex items-center gap-1 rounded-md border border-neutral-100 bg-white px-2.5 py-1 text-xs font-semibold text-brand-900 hover:border-brand-500"
             >
-              {copied === g.token ? "Copiado ✓" : "Copiar"}
+              {copied === g.token ? (
+                <>
+                  Copiado
+                  <Check size={12} strokeWidth={2.25} aria-hidden />
+                </>
+              ) : (
+                "Copiar"
+              )}
             </button>
           </div>
 

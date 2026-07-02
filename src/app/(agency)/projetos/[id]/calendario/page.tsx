@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { publicMediaUrl } from "@/lib/media";
@@ -48,9 +49,10 @@ export default async function CalendarioPage({
     <main className="px-8 py-7">
       <Link
         href={`/projetos/${id}`}
-        className="text-sm font-semibold text-brand-900 hover:underline"
+        className="inline-flex items-center gap-1 text-sm font-semibold text-brand-900 hover:underline"
       >
-        ‹ Voltar para {project.name}
+        <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
+        Voltar para {project.name}
       </Link>
       <h1 className="mb-1 mt-3 font-display text-2xl font-bold tracking-tight text-charcoal-900">
         Calendário

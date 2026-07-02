@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus, Target } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const NET_LABELS: Record<string, string> = {
@@ -12,7 +13,8 @@ const NET_LABELS: Record<string, string> = {
   gmb: "Google",
 };
 const MES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-const PALETTE = ["#009E8E", "#2563EB", "#F59E0B", "#16A34A", "#7C3AED", "#DC2626"];
+/* Escala da marca — teal em tons + charcoal, nada fora da identidade. */
+const PALETTE = ["#009E8E", "#1C1C1E", "#007A6D", "#33C7B8", "#3A3A3E", "#00B5A3"];
 
 function ymLabel(ym: string) {
   const [y, m] = ym.split("-");
@@ -63,21 +65,16 @@ export default async function DashboardPage() {
 
   return (
     <main className="px-8 py-7">
-      <div className="mb-6 flex items-center gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-charcoal-900">
-            Visão geral
-          </h1>
-          <p className="text-sm text-charcoal-900/60">
-            {projList.length} cliente(s) ativo(s)
-          </p>
+      <div className="mb-7">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand-900">
+          Painel da agência
         </div>
-        <Link
-          href="/clientes/novo"
-          className="ml-auto rounded-[10px] bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-400"
-        >
-          + Cadastrar novo cliente
-        </Link>
+        <h1 className="mt-1 font-display text-[28px] font-bold leading-tight tracking-tight text-charcoal-900">
+          Visão geral
+        </h1>
+        <p className="mt-0.5 text-sm text-charcoal-900/60">
+          {projList.length} cliente(s) ativo(s)
+        </p>
       </div>
 
       {/* CLIENTES */}
@@ -138,9 +135,9 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="mt-4 flex gap-4 border-t border-neutral-100 pt-3.5 text-xs text-charcoal-900/60">
-                <Stat n={c("awaiting_review")} label="aguardando" color="#1D4ED8" />
-                <Stat n={c("change_requested")} label="ajustes" color="#92400E" />
-                <Stat n={c("approved")} label="aprovados" color="#15803D" />
+                <Stat n={c("awaiting_review")} label="aguardando" ink="text-status-info-ink" />
+                <Stat n={c("change_requested")} label="ajustes" ink="text-status-warning-ink" />
+                <Stat n={c("approved")} label="aprovados" ink="text-status-success-ink" />
               </div>
             </Link>
           );
@@ -148,9 +145,12 @@ export default async function DashboardPage() {
 
         <Link
           href="/clientes/novo"
-          className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-neutral-100 text-sm font-semibold text-charcoal-900/50 transition-colors hover:border-brand-500 hover:text-brand-900"
+          className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-500/35 text-sm font-semibold text-brand-900 transition-colors hover:border-brand-500 hover:bg-brand-500/5"
         >
-          + Cadastrar novo cliente
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-500/10">
+            <Plus size={18} strokeWidth={1.5} aria-hidden />
+          </span>
+          Cadastrar novo cliente
         </Link>
       </div>
 
@@ -158,15 +158,26 @@ export default async function DashboardPage() {
       <h2 className="font-display text-base font-semibold text-charcoal-900">
         Refações por cliente ao longo do tempo
       </h2>
-      <p className="mb-4 text-sm text-charcoal-900/55">
-        🎯 Meta: diminuir as refações ao longo do projeto.
+      <p className="mb-4 flex items-center gap-1.5 text-sm text-charcoal-900/55">
+        <Target size={15} strokeWidth={1.5} aria-hidden className="text-brand-500" />
+        Meta: diminuir as refações ao longo do projeto.
       </p>
 
       <div className="rounded-2xl border border-neutral-100 bg-white p-5">
         {totalRef === 0 ? (
-          <p className="py-4 text-center text-sm text-charcoal-900/50">
-            Nenhuma refação registrada ainda — ótimo sinal! 🎉
-          </p>
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/graf-equal-teal.png"
+              alt=""
+              aria-hidden
+              className="h-8 w-auto select-none opacity-25"
+              draggable={false}
+            />
+            <p className="text-sm text-charcoal-900/55">
+              Nenhuma refação registrada ainda — ótimo sinal. Continue assim.
+            </p>
+          </div>
         ) : (
           <div className="flex flex-col gap-6">
             {projList
@@ -208,10 +219,10 @@ export default async function DashboardPage() {
   );
 }
 
-function Stat({ n, label, color }: { n: number; label: string; color?: string }) {
+function Stat({ n, label, ink }: { n: number; label: string; ink?: string }) {
   return (
     <div>
-      <b className="block font-display text-lg font-bold" style={{ color: color ?? "#1C1C1E" }}>
+      <b className={`block font-display text-lg font-bold ${ink ?? "text-charcoal-900"}`}>
         {n}
       </b>
       {label}
